@@ -1,0 +1,1990 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-size="phone">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase 11 — Native parity</title>
+<style>
+  :root {
+    --ma-neutral-0:#ffffff; --ma-neutral-50:#f6f7f9; --ma-neutral-75:#f2f4f7;
+    --ma-neutral-100:#eef1f5; --ma-neutral-150:#e1e5ec; --ma-neutral-200:#c6cdd9;
+    --ma-neutral-300:#9aa3b2; --ma-neutral-400:#828d9d; --ma-neutral-500:#6f7a8c;
+    --ma-neutral-600:#646e7c; --ma-neutral-700:#5c6472; --ma-neutral-850:#282e38;
+    --ma-neutral-900:#1b2029; --ma-neutral-925:#161a21; --ma-neutral-950:#12151b;
+    --ma-neutral-1000:#0c0e12; --ma-neutral-1100:#07080b;
+    --ma-accent-400:#ff7a62; --ma-accent-500:#ff5c47; --ma-accent-600:#e84632;
+    --ma-accent-700:#c0341f; --ma-warm-300:#ffb066; --ma-warm-400:#ff8a3d;
+    --motion-fast:120ms; --motion-base:160ms; --motion-slow:240ms;
+    --ease-standard:cubic-bezier(.2,.7,.2,1);
+  }
+  :root, [data-theme="dark"] {
+    color-scheme: dark;
+    --surface-page:var(--ma-neutral-1000); --surface-sunken:var(--ma-neutral-950);
+    --surface-card:var(--ma-neutral-925); --surface-raised:var(--ma-neutral-900);
+    --border-subtle:var(--ma-neutral-850); --border-control:var(--ma-neutral-600);
+    --border-emphasis:var(--ma-neutral-500);
+    --content-primary:var(--ma-neutral-100); --content-secondary:var(--ma-neutral-300);
+    --content-tertiary:var(--ma-neutral-400);
+    --action:var(--ma-accent-500); --action-hover:var(--ma-accent-400);
+    --action-pressed:var(--ma-accent-600); --action-ink:var(--ma-neutral-1000);
+    --action-soft:rgba(255,92,71,.16);
+    --focus:var(--ma-warm-400); --link:var(--ma-warm-400); --link-hover:var(--ma-warm-300);
+    --success:#8fcfa5; --warning:#e8c37a; --danger:#ff9a8f; --info:#9db8ff;
+    --accent-text:var(--ma-warm-400);
+    --scrim:rgba(7,8,11,.72);
+  }
+  [data-theme="light"] {
+    color-scheme: light;
+    --surface-page:var(--ma-neutral-50); --surface-sunken:var(--ma-neutral-100);
+    --surface-card:var(--ma-neutral-0); --surface-raised:var(--ma-neutral-75);
+    --border-subtle:var(--ma-neutral-150); --border-control:var(--ma-neutral-500);
+    --border-emphasis:var(--ma-neutral-600);
+    --content-primary:var(--ma-neutral-950); --content-secondary:var(--ma-neutral-700);
+    --content-tertiary:var(--ma-neutral-600);
+    --action:var(--ma-accent-500); --action-hover:var(--ma-accent-600);
+    --action-pressed:var(--ma-accent-600); --action-ink:var(--ma-neutral-950);
+    --action-soft:rgba(255,92,71,.12);
+    --focus:var(--ma-accent-700); --link:var(--ma-accent-700); --link-hover:#972817;
+    --success:#2f6b3a; --warning:#8a5a12; --danger:#b3261e; --info:#2f5bb7;
+    --accent-text:var(--ma-accent-700);
+    --scrim:rgba(18,21,27,.48);
+  }
+
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body {
+    margin:0; font-family:"Inter","Segoe UI",system-ui,-apple-system,sans-serif;
+    background:var(--surface-page); color:var(--content-primary);
+    font-size:.875rem; line-height:1.6;
+    transition:background-color 150ms ease, color 150ms ease;
+  }
+  html.switching, html.switching * { transition:background-color 150ms ease, border-color 150ms ease, color 150ms ease !important; }
+  h1,h2,h3,h4,p { margin:0; }
+  button,input,select { font:inherit; }
+  a { color:var(--link); text-underline-offset:2px; }
+  :focus-visible { outline:2px solid var(--focus); outline-offset:2px; border-radius:4px; }
+  .ic { width:20px; height:20px; display:block; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .ic.fill { fill:currentColor; stroke:none; }
+  .sr { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+
+  .skip {
+    position:fixed; left:12px; top:-80px; z-index:300; background:var(--action); color:var(--action-ink);
+    font-weight:800; font-size:.78rem; padding:10px 14px; border-radius:8px; text-decoration:none;
+    transition:top var(--motion-fast) var(--ease-standard);
+  }
+  .skip:focus { top:12px; }
+
+  .topbar {
+    position:sticky; top:0; z-index:80; display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:10px 18px; background:var(--surface-page); border-bottom:1px solid var(--border-subtle);
+  }
+  .brand { display:flex; align-items:baseline; gap:9px; margin-right:auto; }
+  .brand strong { font-size:.92rem; letter-spacing:-.01em; }
+  .brand span { color:var(--content-secondary); font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; }
+  .stamp { color:var(--content-secondary); font-size:.6rem; font-weight:650; border:1px solid var(--border-subtle); border-radius:999px; padding:4px 8px; }
+  .seg { display:inline-flex; padding:3px; gap:2px; background:var(--surface-sunken); border:1px solid var(--border-subtle); border-radius:9px; }
+  .seg button {
+    appearance:none; border:0; background:transparent; color:var(--content-secondary);
+    font-size:.66rem; font-weight:650; padding:6px 9px; border-radius:6px; cursor:pointer; min-height:34px;
+  }
+  .seg button:hover { color:var(--content-primary); background:var(--surface-raised); }
+  .seg button[aria-pressed="true"] { background:var(--action); color:var(--action-ink); }
+  .resolved { color:var(--content-secondary); font-size:.62rem; min-width:80px; font-variant-numeric:tabular-nums; }
+
+  .wrap { max-width:1280px; margin:0 auto; padding:26px 18px 90px; }
+  .intro { max-width:860px; margin-bottom:24px; }
+  .eyebrow { color:var(--accent-text); font-size:.62rem; font-weight:750; letter-spacing:.14em; text-transform:uppercase; }
+  h1 { font-size:clamp(1.8rem,3.8vw,2.7rem); line-height:1.05; letter-spacing:-.03em; font-weight:650; margin:9px 0 10px; }
+  .intro p { color:var(--content-secondary); font-size:.86rem; max-width:76ch; }
+
+  .layout { display:grid; grid-template-columns:auto minmax(0,1fr); gap:26px; align-items:start; }
+  .stage { position:sticky; top:66px; display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .stage-note { color:var(--content-secondary); font-size:.62rem; text-align:center; max-width:34ch; }
+
+  /* ---------- device ---------- */
+  .device {
+    position:relative; width:360px; height:720px; display:flex; flex-direction:column;
+    background:var(--surface-page); border:1px solid var(--border-emphasis); border-radius:32px;
+    overflow:hidden; color:var(--content-primary);
+  }
+  .device[data-size="tablet"] { width:520px; height:760px; border-radius:22px; }
+  .device-top {
+    height:30px; display:flex; align-items:center; justify-content:space-between;
+    padding:0 18px; flex-shrink:0; background:var(--surface-page); font-size:.62rem; font-weight:750;
+    color:var(--content-primary);
+  }
+  .device-top .right { display:flex; align-items:center; gap:5px; }
+  .device-top .ic { width:14px; height:14px; }
+  .notch { position:absolute; top:7px; left:50%; transform:translateX(-50%); width:86px; height:18px; border-radius:999px; background:var(--ma-neutral-1100); }
+  [data-theme="light"] .notch { background:var(--ma-neutral-950); }
+  .device[data-size="tablet"] .notch { display:none; }
+
+  .app-head {
+    height:56px; display:flex; align-items:center; gap:10px; padding:0 14px; flex-shrink:0;
+    border-bottom:1px solid var(--border-subtle); background:var(--surface-page);
+  }
+  .app-brand { font-size:1.02rem; font-weight:800; letter-spacing:-.02em; margin-right:auto; }
+  .app-brand .b { color:var(--accent-text); }
+  .head-actions { display:flex; gap:4px; }
+  .icon-btn {
+    appearance:none; border:0; background:transparent; color:var(--content-secondary);
+    width:44px; height:44px; border-radius:10px; display:grid; place-items:center; cursor:pointer;
+  }
+  .icon-btn:hover { background:var(--surface-raised); color:var(--content-primary); }
+  .avatar {
+    width:30px; height:30px; border-radius:999px; background:var(--action-soft);
+    border:1px solid var(--border-control); color:var(--content-primary);
+    display:grid; place-items:center; font-size:.68rem; font-weight:800;
+  }
+
+  .screen-stack { flex:1; overflow-y:auto; overflow-x:hidden; scrollbar-width:thin; }
+  .screen { display:none; padding:14px 14px 26px; }
+  .screen.active { display:block; }
+  .screen[data-screen="watch"].active { display:flex; flex-direction:column; padding:0; height:100%; }
+  .device[data-size="tablet"] .screen { padding-left:20px; padding-right:20px; }
+
+  .tabbar {
+    height:56px; flex-shrink:0; display:flex; border-top:1px solid var(--border-subtle);
+    background:var(--surface-card); padding-bottom:env(safe-area-inset-bottom);
+  }
+  .tabbar.hidden { display:none; }
+  .tab {
+    appearance:none; border:0; background:transparent; color:var(--content-secondary);
+    flex:1; min-height:44px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:3px; font-size:11px; font-weight:650; cursor:pointer; position:relative; padding:0;
+  }
+  .tab .ic { width:22px; height:22px; }
+  .tab[aria-selected="true"] { color:var(--content-primary); font-weight:750; }
+  .tab[aria-selected="true"]::before {
+    content:""; position:absolute; top:0; left:22%; right:22%; height:2px; background:var(--action); border-radius:0 0 2px 2px;
+  }
+  .home-bar { height:4px; flex-shrink:0; display:flex; justify-content:center; background:var(--surface-card); }
+  .home-bar span { width:112px; height:4px; border-radius:999px; background:var(--content-tertiary); opacity:.65; margin-bottom:2px; }
+  .tabbar.hidden + .home-bar { display:none; }
+
+  /* ---------- app content ---------- */
+  .kicker { color:var(--content-secondary); font-size:11px; font-weight:750; letter-spacing:.08em; text-transform:uppercase; }
+  .section-head { display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin:18px 0 9px; }
+  .section-head h2 { font-size:15px; font-weight:750; letter-spacing:-.01em; }
+  .section-head a { font-size:11px; font-weight:700; text-decoration:none; }
+  .muted { color:var(--content-secondary); }
+  .small { font-size:11px; }
+  .micro { font-size:11px; font-weight:750; letter-spacing:.06em; text-transform:uppercase; }
+
+  .badge {
+    display:inline-flex; align-items:center; gap:4px; padding:2px 6px; border-radius:3px;
+    border:1px solid var(--border-subtle); color:var(--content-secondary);
+    font-size:9.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; line-height:1.5;
+  }
+  .badge.free { color:var(--success); border-color:var(--success); }
+  .badge.official { color:var(--info); border-color:var(--info); }
+  .badge.pd { color:var(--warning); border-color:var(--warning); }
+  .badge.ad { color:var(--warning); border-color:var(--warning); }
+  .badge.featured { background:var(--action); color:var(--action-ink); border-color:transparent; }
+
+  .btn {
+    appearance:none; border:1px solid var(--border-control); background:transparent; color:var(--content-primary);
+    min-height:44px; padding:9px 14px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  }
+  .btn:hover { border-color:var(--border-emphasis); background:var(--surface-raised); }
+  .btn.primary { background:var(--action); border-color:transparent; color:var(--action-ink); }
+  .btn.primary:hover { background:var(--action-hover); }
+  .btn.sm { min-height:36px; padding:6px 10px; font-size:11px; }
+  .btn.danger { color:var(--danger); border-color:var(--danger); }
+  .btn.danger:hover { background:var(--surface-raised); }
+  .btn:disabled { color:var(--content-tertiary); border-color:var(--border-subtle); background:var(--surface-raised); cursor:not-allowed; }
+
+  .art { display:block; position:relative; width:100%; aspect-ratio:16/9; overflow:hidden; background:var(--surface-sunken); }
+  .art::after { content:""; position:absolute; inset:0; background:linear-gradient(180deg,rgba(7,8,11,0) 38%,rgba(7,8,11,.72)); }
+  .art.a { background:linear-gradient(135deg,#1c2733 0%,#2c3a42 45%,#6b4635 100%); }
+  .art.b { background:linear-gradient(135deg,#241f2e 0%,#45323c 48%,#8a5a3c 100%); }
+  .art.c { background:linear-gradient(135deg,#15242a 0%,#234039 50%,#4f6b52 100%); }
+  .art.d { background:linear-gradient(135deg,#2a1d1c 0%,#4a2d27 50%,#8c5a3d 100%); }
+  .art.e { background:linear-gradient(135deg,#1a1f2b 0%,#303a52 50%,#586478 100%); }
+  .art.f { background:linear-gradient(135deg,#251e18 0%,#4b3a26 52%,#8e7141 100%); }
+  .art .glyph { position:absolute; left:12px; bottom:10px; z-index:1; color:#eef1f5; font-size:12px; font-weight:750; letter-spacing:-.01em; text-align:left; max-width:80%; }
+  .art .watermark { position:absolute; right:10px; top:9px; z-index:1; width:34px; height:34px; border:1px solid rgba(238,241,245,.35); border-radius:999px; display:grid; place-items:center; color:rgba(238,241,245,.8); font-size:10px; font-weight:800; }
+
+  .hero { border:1px solid var(--border-subtle); border-radius:14px; overflow:hidden; background:var(--surface-card); }
+  .hero .art { aspect-ratio:16/9; }
+  .hero-body { padding:11px 12px 12px; }
+  .hero-body h2 { font-size:19px; line-height:1.15; font-weight:750; letter-spacing:-.02em; }
+  .hero-body p { color:var(--content-secondary); font-size:11.5px; line-height:1.5; margin-top:5px; }
+  .hero-actions { display:flex; gap:7px; margin-top:10px; flex-wrap:wrap; }
+  .hero-meta { display:flex; gap:7px; align-items:center; flex-wrap:wrap; margin-top:7px; color:var(--content-secondary); font-size:10.5px; }
+
+  .continue { appearance:none; font:inherit; color:var(--content-primary); text-align:left; border:1px solid var(--border-subtle); border-radius:12px; overflow:hidden; background:var(--surface-card); display:flex; gap:0; padding:0; cursor:pointer; width:100%; }
+  .continue .art { width:124px; flex:0 0 124px; aspect-ratio:16/10; }
+  .continue .art::after { display:none; }
+  .continue-body { padding:9px 10px; min-width:0; flex:1; display:flex; flex-direction:column; justify-content:center; }
+  .continue-body h3 { font-size:12.5px; font-weight:750; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .continue-body p { color:var(--content-secondary); font-size:10.5px; margin-top:2px; }
+  .progress { height:4px; border-radius:999px; background:var(--border-subtle); margin-top:7px; overflow:hidden; }
+  .progress span { display:block; height:100%; width:52%; background:var(--action); }
+  .continue-btn { align-self:center; margin-right:9px; width:40px; height:40px; border-radius:999px; background:var(--action); color:var(--action-ink); border:0; display:grid; place-items:center; cursor:pointer; flex-shrink:0; }
+  .continue-btn .ic { width:18px; height:18px; }
+
+  .rail { display:flex; gap:9px; overflow-x:auto; padding-bottom:4px; scrollbar-width:thin; }
+  .card { flex:0 0 138px; border:1px solid var(--border-subtle); border-radius:10px; overflow:hidden; background:var(--surface-card); position:relative; }
+  .card .art { aspect-ratio:16/9; }
+  .card .art::after { background:linear-gradient(180deg,rgba(7,8,11,0) 55%,rgba(7,8,11,.65)); }
+  .card .badges { position:absolute; top:6px; left:6px; z-index:2; display:flex; gap:3px; flex-wrap:wrap; max-width:calc(100% - 44px); }
+  .card .heart {
+    position:absolute; top:3px; right:3px; z-index:3; width:44px; height:44px; border:0; background:transparent;
+    color:#eef1f5; display:grid; place-items:center; cursor:pointer;
+  }
+  .card .heart .dot { width:28px; height:28px; border-radius:999px; background:rgba(7,8,11,.66); border:1px solid rgba(238,241,245,.28); display:grid; place-items:center; }
+  .card .heart .ic { width:15px; height:15px; }
+  .card .heart[aria-pressed="true"] { color:var(--action); }
+  .card .rank {
+    position:absolute; left:6px; bottom:6px; z-index:2; font-size:30px; font-weight:800; line-height:1;
+    color:#eef1f5; background:rgba(7,8,11,.68); border-radius:4px; padding:1px 5px;
+  }
+  .card .card-body { padding:6px 8px 8px; }
+  .card .card-body strong { display:block; font-size:11.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .card .card-body span { display:block; color:var(--content-secondary); font-size:10px; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .card-main { appearance:none; border:0; background:transparent; color:inherit; display:block; width:100%; padding:0; text-align:left; cursor:pointer; }
+
+  .ad {
+    border:1px dashed var(--border-control); border-radius:10px; background:var(--surface-sunken);
+    padding:9px; margin-top:14px;
+  }
+  .ad-top { display:flex; align-items:center; gap:7px; font-size:10px; color:var(--content-secondary); }
+  .ad-body { margin-top:7px; border-radius:7px; border:1px solid var(--border-subtle); background:var(--surface-card); padding:13px 10px; text-align:center; color:var(--content-secondary); font-size:10.5px; }
+
+  .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  .device[data-size="tablet"] .grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .grid .card { flex:none; width:auto; }
+  .grid .card .art { aspect-ratio:16/9; }
+
+  .chips { display:flex; gap:6px; overflow-x:auto; padding-bottom:3px; scrollbar-width:thin; }
+  .chip {
+    appearance:none; border:1px solid var(--border-subtle); background:var(--surface-card);
+    color:var(--content-secondary); border-radius:999px; padding:0 12px; min-height:40px;
+    font-size:11px; font-weight:700; white-space:nowrap; cursor:pointer;
+  }
+  .chip:hover { border-color:var(--border-control); }
+  .chip[aria-pressed="true"] { background:var(--action-soft); border-color:var(--action); color:var(--content-primary); }
+  .sort-row { display:flex; align-items:center; gap:7px; margin-top:10px; flex-wrap:wrap; }
+  .sort { appearance:none; border:1px solid var(--border-subtle); background:transparent; color:var(--content-secondary); border-radius:7px; min-height:36px; padding:0 9px; font-size:10.5px; font-weight:700; cursor:pointer; }
+  .sort[aria-pressed="true"] { color:var(--content-primary); border-color:var(--border-control); background:var(--surface-raised); }
+  .count { margin-left:auto; color:var(--content-secondary); font-size:10.5px; font-variant-numeric:tabular-nums; }
+
+  .search-field {
+    display:flex; align-items:center; gap:8px; border:1px solid var(--border-control);
+    background:var(--surface-sunken); border-radius:10px; padding:0 10px; min-height:46px;
+  }
+  .search-field .ic { color:var(--content-secondary); flex-shrink:0; }
+  .search-field input {
+    appearance:none; border:0; background:transparent; color:var(--content-primary);
+    flex:1; min-width:0; font-size:13px; padding:10px 0; outline:none;
+  }
+  .search-field input::placeholder { color:var(--content-tertiary); }
+  .search-field .clear { appearance:none; border:0; background:transparent; color:var(--content-secondary); width:36px; height:36px; display:grid; place-items:center; cursor:pointer; border-radius:8px; }
+  .hint { border:1px dashed var(--border-control); border-radius:10px; background:var(--surface-sunken); padding:10px; margin-top:10px; color:var(--content-secondary); font-size:11px; line-height:1.55; }
+  .hint b { color:var(--content-primary); }
+  .hot { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .hot button { appearance:none; border:1px solid var(--border-subtle); background:var(--surface-card); color:var(--content-secondary); border-radius:999px; padding:0 10px; min-height:36px; font-size:10.5px; font-weight:700; cursor:pointer; }
+  .hot button:hover { color:var(--content-primary); border-color:var(--border-control); }
+
+  .page-title { font-size:22px; font-weight:750; letter-spacing:-.025em; }
+  .page-sub { color:var(--content-secondary); font-size:11px; margin-top:3px; }
+  .divider { height:1px; background:var(--border-subtle); margin:14px 0; }
+
+  .row-card { border:1px solid var(--border-subtle); border-radius:11px; background:var(--surface-card); padding:12px; margin-top:10px; }
+  .row-card h3 { font-size:12.5px; font-weight:750; }
+  .row-card p { color:var(--content-secondary); font-size:10.5px; line-height:1.5; margin-top:3px; }
+  .row-card .actions { display:flex; gap:7px; flex-wrap:wrap; margin-top:9px; }
+  .row-line { display:flex; align-items:center; gap:9px; min-height:48px; border-bottom:1px solid var(--border-subtle); }
+  .row-line:last-child { border-bottom:0; }
+  .row-line .label { flex:1; font-size:12px; font-weight:650; }
+  .row-line .value { color:var(--content-secondary); font-size:10.5px; }
+  .row-line .chev { color:var(--content-tertiary); width:18px; height:18px; }
+
+  /* ---------- watch ---------- */
+  .watch-top {
+    height:52px; flex-shrink:0; display:flex; align-items:center; gap:6px; padding:0 8px;
+    border-bottom:1px solid var(--border-subtle); background:var(--surface-page);
+  }
+  .watch-top .title { flex:1; font-size:12px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .watch-scroll { flex:1; overflow-y:auto; }
+  .watch-player {
+    position:relative; width:100%; aspect-ratio:16/9; background:#000; overflow:hidden;
+    display:flex; flex-direction:column; justify-content:space-between; transition:flex 160ms var(--ease-standard);
+  }
+  .watch-screen.fullscreen .watch-player { flex:1; aspect-ratio:auto; }
+  .watch-screen.fullscreen .watch-scroll { display:flex; flex-direction:column; }
+  .watch-screen.fullscreen .watch-below { display:none; }
+  .watch-art { position:absolute; inset:0; background:linear-gradient(135deg,#0b1420 0%,#1e3448 42%,#6a4530 100%); }
+  .watch-art::before {
+    content:""; position:absolute; left:12%; right:12%; top:18%; bottom:30%;
+    border:1px solid rgba(238,241,245,.18); border-radius:4px;
+  }
+  .watch-art::after {
+    content:""; position:absolute; inset:0;
+    background:linear-gradient(180deg,rgba(7,8,11,.22),rgba(7,8,11,0) 38%,rgba(7,8,11,.78));
+  }
+  .player-center { position:relative; z-index:2; align-self:center; margin-top:auto; margin-bottom:auto; }
+  .player-center button {
+    width:58px; height:58px; border-radius:999px; border:1px solid rgba(238,241,245,.5);
+    background:rgba(7,8,11,.58); color:#eef1f5; display:grid; place-items:center; cursor:pointer;
+  }
+  .player-center .ic { width:24px; height:24px; }
+  .player-chrome { position:relative; z-index:2; padding:7px 10px 8px; color:#eef1f5; }
+  .player-line { display:flex; align-items:center; gap:7px; font-size:10px; color:#c7ccd6; }
+  .seek { appearance:none; display:block; width:100%; height:4px; border-radius:999px; background:rgba(238,241,245,.32); accent-color:#ff5c47; margin:5px 0 4px; cursor:pointer; }
+  .seek::-webkit-slider-thumb { appearance:none; width:14px; height:14px; border-radius:999px; background:#ff5c47; border:2px solid #0c0e12; }
+  .seek::-moz-range-thumb { width:14px; height:14px; border-radius:999px; background:#ff5c47; border:2px solid #0c0e12; }
+  .watch-badges { position:absolute; top:8px; left:8px; z-index:3; display:flex; gap:4px; }
+  .watch-below { padding:12px 14px 30px; }
+  .watch-title { font-size:20px; line-height:1.2; font-weight:750; letter-spacing:-.02em; }
+  .watch-meta { color:var(--content-secondary); font-size:10.5px; margin-top:4px; }
+  .mirror {
+    border:1px solid var(--border-subtle); border-radius:11px; background:var(--surface-card);
+    padding:8px; margin-top:11px;
+  }
+  .mirror-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; }
+  .mirror-head span { color:var(--content-secondary); font-size:9.5px; font-weight:750; letter-spacing:.07em; text-transform:uppercase; }
+  .mirror-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:5px; }
+  .mirror button {
+    appearance:none; border:1px solid var(--border-subtle); background:var(--surface-sunken);
+    color:var(--content-primary); min-height:46px; border-radius:8px; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+    font-size:9.5px; font-weight:700; padding:4px 2px;
+  }
+  .mirror button:hover { border-color:var(--border-control); background:var(--surface-raised); }
+  .mirror button[aria-pressed="true"] { border-color:var(--action); background:var(--action-soft); }
+  .mirror .ic { width:17px; height:17px; }
+  .mirror .wide { grid-column:span 2; flex-direction:row; gap:7px; }
+  .mirror select {
+    appearance:none; border:1px solid var(--border-control); background:var(--surface-sunken); color:var(--content-primary);
+    border-radius:7px; min-height:38px; padding:0 8px; font-size:10.5px; font-weight:700; width:100%;
+  }
+  .source-note { border-top:1px solid var(--border-subtle); margin-top:13px; padding-top:10px; color:var(--content-secondary); font-size:10.5px; line-height:1.55; }
+  .source-note a { font-weight:700; display:inline-block; margin-top:4px; font-size:11px; }
+  .upnext {
+    border:1px solid var(--border-control); border-radius:10px; background:var(--surface-sunken);
+    padding:9px 10px; margin-top:10px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  }
+  .upnext p { flex:1; font-size:11px; font-weight:650; min-width:150px; }
+  .ep-head { display:flex; align-items:baseline; justify-content:space-between; margin:16px 0 6px; }
+  .ep-head h3 { font-size:14px; font-weight:750; }
+  .ep-head span { color:var(--content-secondary); font-size:10px; }
+  .ep-row {
+    width:100%; appearance:none; border:0; border-bottom:1px solid var(--border-subtle);
+    background:transparent; color:var(--content-primary); display:flex; align-items:center; gap:9px;
+    min-height:56px; padding:6px 2px; text-align:left; cursor:pointer;
+  }
+  .ep-row:hover { background:var(--surface-raised); }
+  .ep-row[aria-current="true"] { background:var(--action-soft); }
+  .ep-num { min-width:44px; text-align:center; border:1px solid var(--border-subtle); border-radius:7px; padding:3px 4px; font-size:9.5px; font-weight:800; color:var(--content-secondary); }
+  .ep-row[aria-current="true"] .ep-num { border-color:var(--action); color:var(--accent-text); }
+  .ep-body { flex:1; min-width:0; }
+  .ep-body b { display:block; font-size:11.5px; font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ep-body small { display:block; color:var(--content-secondary); font-size:9.5px; margin-top:1px; }
+  .ep-check { color:var(--success); width:18px; height:18px; }
+
+  /* ---------- sheets ---------- */
+  .sheet-layer {
+    position:absolute; inset:0; z-index:90; background:var(--scrim);
+    display:flex; align-items:flex-end; justify-content:center; padding:0;
+    opacity:0; visibility:hidden; transition:opacity var(--motion-base) var(--ease-standard), visibility 0s linear var(--motion-base);
+  }
+  .sheet-layer.open { opacity:1; visibility:visible; transition:opacity var(--motion-base) var(--ease-standard); }
+  .sheet {
+    width:100%; max-height:92%; overflow-y:auto; background:var(--surface-card);
+    border:1px solid var(--border-subtle); border-radius:16px 16px 0 0; padding:14px 14px 18px;
+    transform:translateY(12px); transition:transform var(--motion-base) var(--ease-standard);
+  }
+  .sheet-layer.open .sheet { transform:none; }
+  .sheet-head { display:flex; align-items:flex-start; gap:8px; }
+  .sheet-head h3 { flex:1; font-size:17px; font-weight:750; letter-spacing:-.015em; }
+  .sheet-close { appearance:none; border:1px solid var(--border-control); background:transparent; color:var(--content-secondary); width:40px; height:40px; border-radius:8px; display:grid; place-items:center; cursor:pointer; }
+  .sheet-close:hover { color:var(--content-primary); background:var(--surface-raised); }
+  .sheet-body { color:var(--content-secondary); font-size:12px; line-height:1.6; margin-top:7px; }
+  .sheet-actions { display:flex; flex-direction:column; gap:7px; margin-top:12px; }
+  .sheet-actions .btn { width:100%; }
+  .sheet-actions.row { flex-direction:row; }
+  .sheet-actions.row .btn { width:auto; flex:1; }
+  .switches { margin-top:10px; }
+  .switch-row { display:flex; align-items:center; gap:10px; justify-content:space-between; border-top:1px solid var(--border-subtle); padding:9px 0; }
+  .switch-row p { font-size:11.5px; font-weight:650; }
+  .switch-row small { display:block; color:var(--content-secondary); font-size:10px; font-weight:400; margin-top:2px; line-height:1.45; }
+  .switch { appearance:none; border:1px solid var(--border-control); background:var(--surface-sunken); width:46px; height:28px; border-radius:999px; position:relative; cursor:pointer; flex-shrink:0; }
+  .switch::after { content:""; position:absolute; top:2px; left:2px; width:22px; height:22px; border-radius:999px; background:var(--content-secondary); transition:transform var(--motion-fast) var(--ease-standard), background-color var(--motion-fast); }
+  .switch[aria-checked="true"] { background:var(--action); border-color:var(--action); }
+  .switch[aria-checked="true"]::after { transform:translateX(18px); background:var(--action-ink); }
+
+  .toast {
+    position:absolute; left:12px; right:12px; bottom:70px; z-index:120;
+    background:var(--ma-neutral-0); color:var(--ma-neutral-1000); border-radius:9px;
+    padding:10px 12px; font-size:11.5px; font-weight:650; display:flex; align-items:center; gap:10px;
+    opacity:0; visibility:hidden; transition:opacity var(--motion-base) var(--ease-standard), visibility 0s linear var(--motion-base);
+  }
+  .toast.show { opacity:1; visibility:visible; transition:opacity var(--motion-base) var(--ease-standard); }
+  .toast span { flex:1; }
+  .toast button { appearance:none; border:0; background:transparent; color:inherit; font-size:11.5px; font-weight:800; text-decoration:underline; cursor:pointer; min-height:32px; }
+  .watch-screen.fullscreen ~ .toast { bottom:14px; }
+
+  /* ---------- right panel ---------- */
+  .panel { min-width:0; }
+  .panel-tabs { display:flex; gap:4px; flex-wrap:wrap; padding:3px; background:var(--surface-sunken); border:1px solid var(--border-subtle); border-radius:9px; width:max-content; max-width:100%; }
+  .panel-tabs button { appearance:none; border:0; background:transparent; color:var(--content-secondary); font-size:.68rem; font-weight:700; padding:7px 11px; border-radius:6px; cursor:pointer; min-height:34px; }
+  .panel-tabs button:hover { color:var(--content-primary); background:var(--surface-raised); }
+  .panel-tabs button[aria-selected="true"] { background:var(--action); color:var(--action-ink); }
+  .panel-section[hidden] { display:none; }
+  .panel-card { background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:12px; padding:14px; margin-top:10px; }
+  .panel-card h2 { font-size:.92rem; font-weight:750; letter-spacing:-.01em; }
+  .panel-card > p { color:var(--content-secondary); font-size:.72rem; margin-top:5px; }
+  .table-wrap { overflow-x:auto; margin-top:10px; }
+  table { width:100%; border-collapse:collapse; font-size:.68rem; }
+  th { text-align:left; color:var(--content-secondary); font-size:.56rem; font-weight:750; letter-spacing:.09em; text-transform:uppercase; padding:7px 8px; border-bottom:1px solid var(--border-subtle); white-space:nowrap; }
+  td { padding:8px; border-bottom:1px solid var(--border-subtle); vertical-align:top; }
+  tr:last-child td { border-bottom:0; }
+  td.num { color:var(--content-secondary); font-variant-numeric:tabular-nums; width:2rem; }
+  td.loc { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.62rem; color:var(--content-secondary); white-space:nowrap; }
+  td.fix { color:var(--content-secondary); }
+  .pill { display:inline-flex; padding:1px 6px; border-radius:999px; border:1px solid var(--border-subtle); font-size:.54rem; font-weight:750; letter-spacing:.05em; text-transform:uppercase; color:var(--content-secondary); }
+  .pill.p0 { color:var(--danger); border-color:var(--danger); }
+  .pill.p1 { color:var(--warning); border-color:var(--warning); }
+  .pill.p2 { color:var(--info); border-color:var(--info); }
+  .pill.yes { color:var(--success); border-color:var(--success); }
+  .pill.part { color:var(--warning); border-color:var(--warning); }
+  .pill.no { color:var(--danger); border-color:var(--danger); }
+  .filters { display:flex; gap:5px; flex-wrap:wrap; margin-top:9px; }
+  .filters button { appearance:none; border:1px solid var(--border-subtle); background:transparent; color:var(--content-secondary); border-radius:7px; min-height:34px; padding:0 10px; font-size:.64rem; font-weight:700; cursor:pointer; }
+  .filters button[aria-pressed="true"] { border-color:var(--action); background:var(--action-soft); color:var(--content-primary); }
+  .count-line { color:var(--content-secondary); font-size:.64rem; margin-top:7px; font-variant-numeric:tabular-nums; }
+
+  .entry-buttons { display:flex; gap:5px; flex-wrap:wrap; margin-top:10px; }
+  .entry-buttons button { appearance:none; border:1px solid var(--border-subtle); background:transparent; color:var(--content-secondary); border-radius:7px; min-height:36px; padding:0 9px; font-size:.64rem; font-weight:700; cursor:pointer; }
+  .entry-buttons button[aria-pressed="true"] { border-color:var(--action); background:var(--action-soft); color:var(--content-primary); }
+  .entry-result { border:1px solid var(--border-subtle); border-radius:10px; background:var(--surface-sunken); padding:11px; margin-top:10px; }
+  .entry-result h3 { font-size:.78rem; font-weight:750; }
+  .entry-result dl { display:grid; grid-template-columns:auto 1fr; gap:5px 10px; margin:8px 0 0; font-size:.68rem; }
+  .entry-result dt { color:var(--content-secondary); }
+  .entry-result dd { margin:0; font-weight:650; }
+  .note { color:var(--content-secondary); font-size:.66rem; line-height:1.55; margin-top:9px; }
+  .note b { color:var(--content-primary); }
+
+  .tokens { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:7px; margin-top:10px; }
+  .token { border:1px solid var(--border-subtle); border-radius:8px; overflow:hidden; }
+  .token .swatch { height:30px; border-bottom:1px solid var(--border-subtle); }
+  .token .meta { padding:5px 7px; }
+  .token b { display:block; font-size:.58rem; font-weight:750; }
+  .token span { display:block; color:var(--content-secondary); font-size:.58rem; font-family:ui-monospace,monospace; }
+  .contrast { margin-top:10px; }
+  .contrast-row { display:flex; align-items:center; gap:7px; padding:5px 0; border-bottom:1px solid var(--border-subtle); font-size:.66rem; }
+  .contrast-row:last-child { border-bottom:0; }
+  .contrast-row .ratio { margin-left:auto; font-variant-numeric:tabular-nums; font-weight:750; }
+  .contrast-row .ratio.fail { color:var(--danger); }
+  .contrast-row .ratio.pass { color:var(--success); }
+
+  .foot { margin-top:30px; padding-top:13px; border-top:1px solid var(--border-subtle); color:var(--content-secondary); font-size:.62rem; max-width:92ch; }
+  .foot b { color:var(--content-primary); }
+
+  @media (max-width:1050px) {
+    .layout { grid-template-columns:1fr; }
+    .stage { position:static; order:-1; }
+  }
+  @media (max-width:760px) {
+    .brand span, .stamp, .resolved { display:none; }
+    .device, .device[data-size="tablet"] { width:min(100%,360px); height:min(720px,78vh); }
+    .device[data-size="tablet"] .grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .wrap { padding-left:12px; padding-right:12px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior:auto; }
+    *, *::before, *::after {
+      animation-duration:.001ms !important; animation-iteration-count:1 !important;
+      transition-duration:.001ms !important; transition-delay:0s !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.35-7-9.5A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 7 3.5C19 15.65 12 20 12 20z"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10-6.5z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><rect x="7" y="5" width="3.6" height="14" rx="1" fill="currentColor" stroke="none"/><rect x="13.4" y="5" width="3.6" height="14" rx="1" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="m14.5 5-7 7 7 7"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="m9.5 5 7 7-7 7"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+  <symbol id="i-back10" viewBox="0 0 24 24"><path d="M4.5 9.5A8 8 0 1 1 4 14"/><path d="M4.5 4.5v5h5"/><text x="12" y="16.5" text-anchor="middle" font-size="7" font-weight="700" fill="currentColor" stroke="none">10</text></symbol>
+  <symbol id="i-fwd10" viewBox="0 0 24 24"><path d="M19.5 9.5A8 8 0 1 0 20 14"/><path d="M19.5 4.5v5h-5"/><text x="12" y="16.5" text-anchor="middle" font-size="7" font-weight="700" fill="currentColor" stroke="none">10</text></symbol>
+  <symbol id="i-volume" viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 19V5L7.5 9.5z"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6"/><path d="M18 6.5a8 8 0 0 1 0 11"/></symbol>
+  <symbol id="i-muted" viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 19V5L7.5 9.5z"/><path d="m16 10 4 4M20 10l-4 4"/></symbol>
+  <symbol id="i-cc" viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M10.5 10.5a2.5 2.5 0 1 0 0 3M17 10.5a2.5 2.5 0 1 0 0 3"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/></symbol>
+  <symbol id="i-full" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+  <symbol id="i-signal" viewBox="0 0 24 24"><path d="M4 18v-2M9 18v-5M14 18v-8M19 18V6" stroke-width="2.4"/></symbol>
+  <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M3.5 9a13 13 0 0 1 17 0M6.5 12.5a8.5 8.5 0 0 1 11 0M9.5 16a4 4 0 0 1 5 0"/><circle cx="12" cy="19" r="1" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-battery" viewBox="0 0 24 24"><rect x="3" y="8" width="16" height="8" rx="2"/><path d="M21 10.5v3" stroke-width="2.4"/><rect x="5" y="10" width="10" height="4" rx="1" fill="currentColor" stroke="none"/></symbol>
+</svg>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand"><strong>MovieArena</strong><span>Phase 11 · native parity</span></div>
+  <span class="stamp">Draft v0.1</span>
+  <div class="seg" role="group" aria-label="Theme mode">
+    <button data-mode="system">System</button>
+    <button data-mode="dark" aria-pressed="true">Dark</button>
+    <button data-mode="light" aria-pressed="false">Light</button>
+  </div>
+  <span class="resolved" id="resolved">dark</span>
+  <div class="seg" role="group" aria-label="Device size">
+    <button data-size-btn="phone" aria-pressed="true">Phone</button>
+    <button data-size-btn="tablet" aria-pressed="false">Tablet</button>
+  </div>
+</header>
+
+<main class="wrap" id="main" tabindex="-1">
+  <section class="intro">
+    <div class="eyebrow">Phase 11 draft v0.1</div>
+    <h1>Same product. Native hands.</h1>
+    <p>Tap through the phone: five tabs, a Watch screen that opens paused unless you choose Resume, a native player control path, a bottom-sheet consent screen, and the destructive action with undo. Switch to light, then to tablet. Every screen uses the Phase 5 tokens, the Phase 9 roles, and the Phase 10 words. The gap audit below is a static source review of 1,566 lines — not a device test.</p>
+  </section>
+
+  <div class="layout">
+    <div class="stage">
+      <div class="device" id="device" data-size="phone">
+        <div class="notch" aria-hidden="true"></div>
+        <div class="device-top" aria-hidden="true">
+          <span>9:41</span>
+          <span class="right">
+            <svg class="ic"><use href="#i-signal"></use></svg>
+            <svg class="ic"><use href="#i-wifi"></use></svg>
+            <svg class="ic"><use href="#i-battery"></use></svg>
+          </span>
+        </div>
+
+        <div class="app-head" id="app-head">
+          <div class="app-brand">Movie<span class="b">Arena</span></div>
+          <div class="head-actions">
+            <button class="icon-btn" data-go="search" aria-label="Search titles"><svg class="ic"><use href="#i-search"></use></svg></button>
+            <button class="icon-btn" data-go="more" aria-label="Account"><span class="avatar">G</span></button>
+          </div>
+        </div>
+
+        <div class="screen-stack" id="screen-stack">
+
+          <!-- HOME -->
+          <section class="screen active" data-screen="home" aria-labelledby="home-title">
+            <h1 id="home-title" class="sr">Home</h1>
+
+            <div class="section-head" style="margin-top:0">
+              <h2>Continue watching</h2>
+              <a href="#list" data-go="list">See all</a>
+            </div>
+            <button class="continue" data-open="river" data-resume="1" aria-label="Resume River of Stars, episode 4, 12 minutes 34 seconds in">
+              <span class="art a" aria-hidden="true"></span>
+              <span class="continue-body">
+                <span class="kicker">Resume</span>
+                <h3>River of Stars</h3>
+                <p>S2 E4 · 11 min left</p>
+                <span class="progress" aria-hidden="true"><span></span></span>
+              </span>
+              <span class="continue-btn" aria-hidden="true"><svg class="ic fill"><use href="#i-play"></use></svg></span>
+            </button>
+
+            <div class="section-head"><h2>Featured</h2><span class="muted small">Curated, not ranked</span></div>
+            <article class="hero">
+              <div class="art b" aria-hidden="true">
+                <span class="watermark">MA</span>
+                <span class="glyph">A quiet epic on the water</span>
+              </div>
+              <div class="hero-body">
+                <div class="hero-meta">
+                  <span class="badge featured">Featured</span>
+                  <span class="badge official">Official</span>
+                  <span class="badge free">Free</span>
+                </div>
+                <h2 style="margin-top:7px">River of Stars</h2>
+                <p>A ferryman crosses a flooded valley and finds the village that vanished. Episode 4 of 5.</p>
+                <div class="hero-actions">
+                  <button class="btn primary" data-open="river" data-resume="0"><svg class="ic fill" style="width:14px;height:14px"><use href="#i-play"></use></svg>Watch</button>
+                  <button class="btn" data-heart="river" aria-pressed="false" aria-label="Save River of Stars"><svg class="ic"><use href="#i-heart"></use></svg>Save</button>
+                </div>
+              </div>
+            </article>
+
+            <div class="section-head"><h2>Popular now</h2><a href="#browse" data-go="browse">See all</a></div>
+            <div class="rail">
+              <article class="card">
+                <button class="card-main" data-open="lanterns" aria-label="Paper Lanterns, 12 episodes, free">
+                  <div class="art c"><span class="watermark">MA</span><span class="glyph">Paper Lanterns</span></div>
+                  <div class="card-body"><strong>Paper Lanterns</strong><span>Official · 12 episodes</span></div>
+                </button>
+                <div class="badges"><span class="badge free">Free</span><span class="badge official">Official</span></div>
+                <button class="heart" data-heart="lanterns" aria-pressed="false" aria-label="Save Paper Lanterns"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+              <article class="card">
+                <button class="card-main" data-open="clock" aria-label="The Clockmaker, public domain film, free">
+                  <div class="art d"><span class="watermark">MA</span><span class="glyph">The Clockmaker</span></div>
+                  <div class="card-body"><strong>The Clockmaker</strong><span>Public domain · 1927</span></div>
+                </button>
+                <div class="badges"><span class="badge free">Free</span><span class="badge pd">Public domain</span></div>
+                <button class="heart" data-heart="clock" aria-pressed="false" aria-label="Save The Clockmaker"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+              <article class="card">
+                <button class="card-main" data-open="silent" aria-label="The Silent House, 8 episodes, free">
+                  <div class="art e"><span class="watermark">MA</span><span class="glyph">The Silent House</span></div>
+                  <div class="card-body"><strong>The Silent House</strong><span>Official · 8 episodes</span></div>
+                </button>
+                <div class="badges"><span class="badge free">Free</span><span class="badge official">Official</span></div>
+                <button class="heart" data-heart="silent" aria-pressed="false" aria-label="Save The Silent House"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+              <article class="card">
+                <button class="card-main" data-open="salt" aria-label="Salt and Smoke, public domain film, free">
+                  <div class="art f"><span class="watermark">MA</span><span class="glyph">Salt &amp; Smoke</span></div>
+                  <div class="card-body"><strong>Salt &amp; Smoke</strong><span>Public domain · 1931</span></div>
+                </button>
+                <div class="badges"><span class="badge free">Free</span><span class="badge pd">Public domain</span></div>
+                <button class="heart" data-heart="salt" aria-pressed="false" aria-label="Save Salt and Smoke"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+            </div>
+
+            <div class="ad" aria-label="Advertisement">
+              <div class="ad-top"><span class="badge ad">Ad</span><span>Contextual · based on this title, not your history</span><span style="margin-left:auto">Why this ad?</span></div>
+              <div class="ad-body">Reserved ad slot. Same height before and after load. Closes without shifting the page.</div>
+            </div>
+
+            <div class="section-head"><h2>Classic movie night</h2><a href="#browse" data-go="browse">See all</a></div>
+            <div class="rail">
+              <article class="card">
+                <button class="card-main" data-open="clock" aria-label="The Clockmaker, public domain film, free">
+                  <div class="art d"><span class="glyph">The Clockmaker</span></div>
+                  <div class="card-body"><strong>The Clockmaker</strong><span>Public domain · 1927</span></div>
+                </button>
+                <div class="badges"><span class="badge pd">Public domain</span></div>
+                <button class="heart" data-heart="clock" aria-pressed="false" aria-label="Save The Clockmaker"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+              <article class="card">
+                <button class="card-main" data-open="salt" aria-label="Salt and Smoke, public domain film, free">
+                  <div class="art f"><span class="glyph">Salt &amp; Smoke</span></div>
+                  <div class="card-body"><strong>Salt &amp; Smoke</strong><span>Public domain · 1931</span></div>
+                </button>
+                <div class="badges"><span class="badge pd">Public domain</span></div>
+                <button class="heart" data-heart="salt" aria-pressed="false" aria-label="Save Salt and Smoke"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+              <article class="card">
+                <button class="card-main" data-open="north" aria-label="Northern Lights, public domain film, free">
+                  <div class="art a"><span class="glyph">Northern Lights</span></div>
+                  <div class="card-body"><strong>Northern Lights</strong><span>Public domain · 1929</span></div>
+                </button>
+                <div class="badges"><span class="badge pd">Public domain</span></div>
+                <button class="heart" data-heart="north" aria-pressed="false" aria-label="Save Northern Lights"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+            </div>
+
+            <div class="section-head"><h2>All titles</h2><a href="#browse" data-go="browse">Browse</a></div>
+            <div class="grid">
+              <article class="card">
+                <button class="card-main" data-open="lanterns" aria-label="Paper Lanterns, 12 episodes, free">
+                  <div class="art c"><span class="glyph">Paper Lanterns</span></div>
+                  <div class="card-body"><strong>Paper Lanterns</strong><span>Official · 12 episodes</span></div>
+                </button>
+                <button class="heart" data-heart="lanterns" aria-pressed="false" aria-label="Save Paper Lanterns"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+              <article class="card">
+                <button class="card-main" data-open="robot" aria-label="Little Robot, 6 episodes, free">
+                  <div class="art e"><span class="glyph">Little Robot</span></div>
+                  <div class="card-body"><strong>Little Robot</strong><span>Official · 6 episodes</span></div>
+                </button>
+                <button class="heart" data-heart="robot" aria-pressed="false" aria-label="Save Little Robot"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+              <article class="card">
+                <button class="card-main" data-open="sunday" aria-label="Sunday Matinee, public domain film, free">
+                  <div class="art b"><span class="glyph">Sunday Matinee</span></div>
+                  <div class="card-body"><strong>Sunday Matinee</strong><span>Public domain · 1934</span></div>
+                </button>
+                <button class="heart" data-heart="sunday" aria-pressed="false" aria-label="Save Sunday Matinee"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+              <article class="card">
+                <button class="card-main" data-open="silent" aria-label="The Silent House, 8 episodes, free">
+                  <div class="art e"><span class="glyph">The Silent House</span></div>
+                  <div class="card-body"><strong>The Silent House</strong><span>Official · 8 episodes</span></div>
+                </button>
+                <button class="heart" data-heart="silent" aria-pressed="false" aria-label="Save The Silent House"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+            </div>
+          </section>
+
+          <!-- BROWSE -->
+          <section class="screen" data-screen="browse" aria-labelledby="browse-title">
+            <h1 id="browse-title" class="page-title">Browse</h1>
+            <p class="page-sub">A real destination, not a scroll jump. Sections are curated.</p>
+            <div class="chips" role="group" aria-label="Browse section" style="margin-top:12px">
+              <button class="chip" aria-pressed="true">TV Shows</button>
+              <button class="chip" aria-pressed="false">Movies</button>
+              <button class="chip" aria-pressed="false">Animation</button>
+              <button class="chip" aria-pressed="false">Most Watched</button>
+            </div>
+            <div class="sort-row">
+              <button class="sort" aria-pressed="true">Popular</button>
+              <button class="sort" aria-pressed="false">Newest</button>
+              <button class="sort" aria-pressed="false">A → Z</button>
+              <span class="count" id="browse-count">6 titles</span>
+            </div>
+            <div class="grid" style="margin-top:11px">
+              <article class="card">
+                <button class="card-main" data-open="lanterns" aria-label="Paper Lanterns, 12 episodes, free">
+                  <div class="art c"><span class="glyph">Paper Lanterns</span></div>
+                  <div class="card-body"><strong>Paper Lanterns</strong><span>Official · 12 episodes</span></div>
+                </button>
+                <button class="heart" data-heart="lanterns" aria-pressed="false" aria-label="Save Paper Lanterns"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+              <article class="card">
+                <button class="card-main" data-open="robot" aria-label="Little Robot, 6 episodes, free">
+                  <div class="art e"><span class="glyph">Little Robot</span></div>
+                  <div class="card-body"><strong>Little Robot</strong><span>Official · 6 episodes</span></div>
+                </button>
+                <button class="heart" data-heart="robot" aria-pressed="false" aria-label="Save Little Robot"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+              <article class="card">
+                <button class="card-main" data-open="silent" aria-label="The Silent House, 8 episodes, free">
+                  <div class="art e"><span class="glyph">The Silent House</span></div>
+                  <div class="card-body"><strong>The Silent House</strong><span>Official · 8 episodes</span></div>
+                </button>
+                <button class="heart" data-heart="silent" aria-pressed="false" aria-label="Save The Silent House"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+              <article class="card">
+                <button class="card-main" data-open="clock" aria-label="The Clockmaker, public domain film, free">
+                  <div class="art d"><span class="glyph">The Clockmaker</span></div>
+                  <div class="card-body"><strong>The Clockmaker</strong><span>Public domain · 1927</span></div>
+                </button>
+                <button class="heart" data-heart="clock" aria-pressed="false" aria-label="Save The Clockmaker"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+              <article class="card">
+                <button class="card-main" data-open="salt" aria-label="Salt and Smoke, public domain film, free">
+                  <div class="art f"><span class="glyph">Salt &amp; Smoke</span></div>
+                  <div class="card-body"><strong>Salt &amp; Smoke</strong><span>Public domain · 1931</span></div>
+                </button>
+                <button class="heart" data-heart="salt" aria-pressed="false" aria-label="Save Salt and Smoke"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+              <article class="card">
+                <button class="card-main" data-open="north" aria-label="Northern Lights, public domain film, free">
+                  <div class="art a"><span class="glyph">Northern Lights</span></div>
+                  <div class="card-body"><strong>Northern Lights</strong><span>Public domain · 1929</span></div>
+                </button>
+                <button class="heart" data-heart="north" aria-pressed="false" aria-label="Save Northern Lights"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+            </div>
+            <div class="ad" aria-label="Advertisement">
+              <div class="ad-top"><span class="badge ad">Ad</span><span>Browse placement · reserved height</span><span style="margin-left:auto">Why this ad?</span></div>
+              <div class="ad-body">No pre-roll on public-domain films.</div>
+            </div>
+            <div style="display:flex;justify-content:center;margin-top:14px">
+              <button class="btn sm">Load more</button>
+            </div>
+          </section>
+
+          <!-- SEARCH -->
+          <section class="screen" data-screen="search" aria-labelledby="search-title">
+            <h1 id="search-title" class="sr">Search</h1>
+            <div class="search-field">
+              <svg class="ic"><use href="#i-search"></use></svg>
+              <input id="search-input" type="search" placeholder="Title, genre, or source" aria-label="Search titles" aria-describedby="search-hint" autocomplete="off">
+              <button class="clear" id="search-clear" aria-label="Clear search" hidden><svg class="ic"><use href="#i-close"></use></svg></button>
+            </div>
+            <p id="search-hint" class="small muted" style="margin-top:6px">Typos are allowed. Results come from the on-device catalog.</p>
+            <div class="hint">
+              <b>No titles match “friren”.</b> Try fewer words or a genre. <span id="search-hint-extra">Hot words:</span>
+              <div class="hot">
+                <button data-hot="anime">anime</button>
+                <button data-hot="public domain">public domain</button>
+                <button data-hot="animation">animation</button>
+                <button data-hot="official">official channel</button>
+              </div>
+            </div>
+            <div class="section-head">
+              <h2 id="search-heading">Popular right now</h2>
+              <span class="count" id="search-count">6 titles</span>
+            </div>
+            <div class="grid" id="search-results">
+              <article class="card" data-search-item data-title="Paper Lanterns anime official channel">
+                <button class="card-main" data-open="lanterns" aria-label="Paper Lanterns, 12 episodes, free">
+                  <div class="art c"><span class="glyph">Paper Lanterns</span></div>
+                  <div class="card-body"><strong>Paper Lanterns</strong><span>Official · 12 episodes</span></div>
+                </button>
+                <button class="heart" data-heart="lanterns" aria-pressed="false" aria-label="Save Paper Lanterns"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+              <article class="card" data-search-item data-title="Little Robot animation official channel">
+                <button class="card-main" data-open="robot" aria-label="Little Robot, 6 episodes, free">
+                  <div class="art e"><span class="glyph">Little Robot</span></div>
+                  <div class="card-body"><strong>Little Robot</strong><span>Official · 6 episodes</span></div>
+                </button>
+                <button class="heart" data-heart="robot" aria-pressed="false" aria-label="Save Little Robot"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+              <article class="card" data-search-item data-title="The Silent House anime official channel">
+                <button class="card-main" data-open="silent" aria-label="The Silent House, 8 episodes, free">
+                  <div class="art e"><span class="glyph">The Silent House</span></div>
+                  <div class="card-body"><strong>The Silent House</strong><span>Official · 8 episodes</span></div>
+                </button>
+                <button class="heart" data-heart="silent" aria-pressed="false" aria-label="Save The Silent House"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+              <article class="card" data-search-item data-title="The Clockmaker public domain film">
+                <button class="card-main" data-open="clock" aria-label="The Clockmaker, public domain film, free">
+                  <div class="art d"><span class="glyph">The Clockmaker</span></div>
+                  <div class="card-body"><strong>The Clockmaker</strong><span>Public domain · 1927</span></div>
+                </button>
+                <button class="heart" data-heart="clock" aria-pressed="false" aria-label="Save The Clockmaker"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+              <article class="card" data-search-item data-title="Salt and Smoke public domain film">
+                <button class="card-main" data-open="salt" aria-label="Salt and Smoke, public domain film, free">
+                  <div class="art f"><span class="glyph">Salt &amp; Smoke</span></div>
+                  <div class="card-body"><strong>Salt &amp; Smoke</strong><span>Public domain · 1931</span></div>
+                </button>
+                <button class="heart" data-heart="salt" aria-pressed="false" aria-label="Save Salt and Smoke"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+              <article class="card" data-search-item data-title="Northern Lights public domain film">
+                <button class="card-main" data-open="north" aria-label="Northern Lights, public domain film, free">
+                  <div class="art a"><span class="glyph">Northern Lights</span></div>
+                  <div class="card-body"><strong>Northern Lights</strong><span>Public domain · 1929</span></div>
+                </button>
+                <button class="heart" data-heart="north" aria-pressed="false" aria-label="Save Northern Lights"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+            </div>
+            <div id="search-empty" class="row-card" hidden>
+              <h3>No titles match that search.</h3>
+              <p>Try fewer words or a genre. Your results stay on this device.</p>
+            </div>
+          </section>
+
+          <!-- MY LIST -->
+          <section class="screen" data-screen="list" aria-labelledby="list-title">
+            <h1 id="list-title" class="page-title">My List</h1>
+            <p class="page-sub" id="list-sub">4 saved titles · stored on this device</p>
+
+            <div class="section-head"><h2>Continue watching</h2></div>
+            <button class="continue" data-open="river" data-resume="1" aria-label="Resume River of Stars, episode 4, 12 minutes 34 seconds in">
+              <span class="art a" aria-hidden="true"></span>
+              <span class="continue-body">
+                <span class="kicker">Resume</span>
+                <h3>River of Stars</h3>
+                <p>S2 E4 · 11 min left</p>
+                <span class="progress" aria-hidden="true"><span></span></span>
+              </span>
+              <span class="continue-btn" aria-hidden="true"><svg class="ic fill"><use href="#i-play"></use></svg></span>
+            </button>
+
+            <div class="section-head"><h2>Saved</h2><span class="muted small">4</span></div>
+            <div class="grid" id="saved-grid">
+              <article class="card">
+                <button class="card-main" data-open="lanterns" aria-label="Paper Lanterns, 12 episodes, free">
+                  <div class="art c"><span class="glyph">Paper Lanterns</span></div>
+                  <div class="card-body"><strong>Paper Lanterns</strong><span>Official · 12 episodes</span></div>
+                </button>
+                <button class="heart" data-heart="lanterns" aria-pressed="true" aria-label="Remove Paper Lanterns from My List"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+              <article class="card">
+                <button class="card-main" data-open="clock" aria-label="The Clockmaker, public domain film, free">
+                  <div class="art d"><span class="glyph">The Clockmaker</span></div>
+                  <div class="card-body"><strong>The Clockmaker</strong><span>Public domain · 1927</span></div>
+                </button>
+                <button class="heart" data-heart="clock" aria-pressed="true" aria-label="Remove The Clockmaker from My List"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+              <article class="card">
+                <button class="card-main" data-open="silent" aria-label="The Silent House, 8 episodes, free">
+                  <div class="art e"><span class="glyph">The Silent House</span></div>
+                  <div class="card-body"><strong>The Silent House</strong><span>Official · 8 episodes</span></div>
+                </button>
+                <button class="heart" data-heart="silent" aria-pressed="true" aria-label="Remove The Silent House from My List"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+              <article class="card">
+                <button class="card-main" data-open="salt" aria-label="Salt and Smoke, public domain film, free">
+                  <div class="art f"><span class="glyph">Salt &amp; Smoke</span></div>
+                  <div class="card-body"><strong>Salt &amp; Smoke</strong><span>Public domain · 1931</span></div>
+                </button>
+                <button class="heart" data-heart="salt" aria-pressed="true" aria-label="Remove Salt and Smoke from My List"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+              </article>
+            </div>
+          </section>
+
+          <!-- MORE -->
+          <section class="screen" data-screen="more" aria-labelledby="more-title">
+            <h1 id="more-title" class="page-title">More</h1>
+            <p class="page-sub">Guest profile · MovieArena 0.11.0</p>
+
+            <div class="row-card">
+              <h3>You're browsing as a guest</h3>
+              <p>Your list, progress, and appearance stay on this device. Sign in only if you want them on another device.</p>
+              <div class="actions">
+                <button class="btn primary" id="open-signin">Sign in</button>
+                <button class="btn" data-go="list">Open My List</button>
+              </div>
+            </div>
+
+            <div class="row-card">
+              <h3>Appearance</h3>
+              <p>System follows the device. Light and dark are both complete.</p>
+              <div class="seg" role="group" aria-label="Appearance" style="margin-top:8px">
+                <button data-mode="system">System</button>
+                <button data-mode="dark" aria-pressed="true">Dark</button>
+                <button data-mode="light" aria-pressed="false">Light</button>
+              </div>
+            </div>
+
+            <div class="row-card" style="padding:0 12px">
+              <button class="row-line" id="open-consent" style="width:100%;background:transparent;border:0;color:inherit;cursor:pointer;text-align:left;padding:0">
+                <span class="label">Privacy choices</span>
+                <span class="value" id="consent-value">Optional off</span>
+                <svg class="ic chev"><use href="#i-chev"></use></svg>
+              </button>
+              <button class="row-line" data-toast="Export requires a signed-in account. Guest data stays on this device." style="width:100%;background:transparent;border:0;color:inherit;cursor:pointer;text-align:left;padding:0">
+                <span class="label">Export my data</span>
+                <span class="value">Guest</span>
+                <svg class="ic chev"><use href="#i-chev"></use></svg>
+              </button>
+              <button class="row-line" data-toast="Deletion is available after sign-in. It schedules a 30-day window with a cancel action." style="width:100%;background:transparent;border:0;color:inherit;cursor:pointer;text-align:left;padding:0">
+                <span class="label">Delete account</span>
+                <span class="value">Guest</span>
+                <svg class="ic chev"><use href="#i-chev"></use></svg>
+              </button>
+            </div>
+
+            <div class="row-card" style="padding:0 12px">
+              <button class="row-line" data-toast="Native About screen: Phase 10 legal current-state text." style="width:100%;background:transparent;border:0;color:inherit;cursor:pointer;text-align:left;padding:0">
+                <span class="label">About MovieArena</span>
+                <svg class="ic chev"><use href="#i-chev"></use></svg>
+              </button>
+              <button class="row-line" data-toast="Native Legal screen: official embeds, public-domain relay, no licensed proxying." style="width:100%;background:transparent;border:0;color:inherit;cursor:pointer;text-align:left;padding:0">
+                <span class="label">Legal</span>
+                <svg class="ic chev"><use href="#i-chev"></use></svg>
+              </button>
+              <button class="row-line" data-toast="Native Privacy screen: data, purpose, retention, processors, deletion." style="width:100%;background:transparent;border:0;color:inherit;cursor:pointer;text-align:left;padding:0">
+                <span class="label">Privacy</span>
+                <svg class="ic chev"><use href="#i-chev"></use></svg>
+              </button>
+            </div>
+
+            <div class="row-card">
+              <h3>Data on this device</h3>
+              <p>Clearing My List does not erase watch progress. Undo stays available for 4 seconds.</p>
+              <div class="actions">
+                <button class="btn danger" id="open-clear">Clear My List (4)</button>
+              </div>
+            </div>
+            <p class="note">Official embeds may include the rights-holder's own ads. Ads in MovieArena are labelled and contextual by default.</p>
+          </section>
+
+          <!-- WATCH -->
+          <section class="screen watch-screen" data-screen="watch" aria-labelledby="watch-title" id="watch-screen">
+            <div class="watch-top">
+              <button class="icon-btn" id="watch-back" aria-label="Back"><svg class="ic"><use href="#i-back"></use></svg></button>
+              <span class="title" id="watch-top-title">River of Stars</span>
+              <button class="icon-btn" aria-label="More actions" data-toast="Share, report a problem, and open source live here."><svg class="ic"><use href="#i-more"></use></svg></button>
+            </div>
+
+            <div class="watch-scroll">
+              <div class="watch-player" id="watch-player">
+                <div class="watch-art" aria-hidden="true"></div>
+                <div class="watch-badges">
+                  <span class="badge free">Free</span>
+                  <span class="badge official" id="watch-source-badge">Official</span>
+                </div>
+                <div class="player-center">
+                  <button id="play-big" aria-label="Play"><svg class="ic fill"><use href="#i-play"></use></svg></button>
+                </div>
+                <div class="player-chrome">
+                  <div class="player-line">
+                    <span id="watch-time">0:00</span>
+                    <span style="margin-left:auto" id="watch-state">Paused</span>
+                  </div>
+                  <input class="seek" id="seek" type="range" min="0" max="1440" value="0" aria-label="Seek">
+                  <div class="player-line">
+                    <span>Auto</span>
+                    <span style="margin-left:auto">Subtitles off</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="watch-below">
+                <h1 class="watch-title" id="watch-title">River of Stars</h1>
+                <p class="watch-meta" id="watch-meta">Official channel · 5 episodes · Opened paused</p>
+
+                <div class="mirror" aria-label="Player controls">
+                  <div class="mirror-head">
+                    <span>Player controls</span>
+                    <span id="mirror-state" style="color:var(--content-secondary);font-size:9.5px">Paused · 0:00</span>
+                  </div>
+                  <div class="mirror-grid">
+                    <button id="mirror-play" aria-label="Play"><svg class="ic fill"><use href="#i-play"></use></svg><span>Play</span></button>
+                    <button id="back10" aria-label="Back 10 seconds"><svg class="ic"><use href="#i-back10"></use></svg><span>Back 10</span></button>
+                    <button id="fwd10" aria-label="Forward 10 seconds"><svg class="ic"><use href="#i-fwd10"></use></svg><span>Forward 10</span></button>
+                    <button id="mute" aria-label="Mute" aria-pressed="false"><svg class="ic"><use href="#i-volume"></use></svg><span>Mute</span></button>
+                    <button id="subtitles" class="wide" aria-label="Subtitles off" aria-pressed="false"><svg class="ic"><use href="#i-cc"></use></svg><span>Subtitles</span></button>
+                    <button id="fullscreen" class="wide" aria-label="Fullscreen"><svg class="ic"><use href="#i-full"></use></svg><span>Fullscreen</span></button>
+                    <label style="grid-column:span 2;display:flex;align-items:center;gap:6px">
+                      <span class="sr">Quality</span>
+                      <select id="quality" aria-label="Quality">
+                        <option>Quality: Auto</option>
+                        <option>Quality: 1080p</option>
+                        <option>Quality: 720p</option>
+                        <option>Quality: 480p</option>
+                      </select>
+                    </label>
+                    <label style="grid-column:span 2;display:flex;align-items:center;gap:6px">
+                      <span class="sr">Speed</span>
+                      <select id="speed" aria-label="Speed">
+                        <option>Speed: 1x</option>
+                        <option>Speed: 0.5x</option>
+                        <option>Speed: 0.75x</option>
+                        <option>Speed: 1.25x</option>
+                        <option>Speed: 1.5x</option>
+                        <option>Speed: 2x</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+
+                <div style="display:flex;justify-content:flex-end;margin-top:6px">
+                  <button class="btn sm" id="demo-autoplay">Demo up-next countdown</button>
+                </div>
+
+                <div class="upnext" id="upnext" hidden>
+                  <p id="upnext-text">Up next: Episode 5 in 8s</p>
+                  <button class="btn sm" id="upnext-play">Play now</button>
+                  <button class="btn sm" id="upnext-cancel">Cancel</button>
+                </div>
+
+                <div class="source-note" id="source-note">
+                  <span id="source-text">Official embed from the rights-holder's channel. Playback stays on the official player.</span>
+                  <br><a href="#source" data-toast="This opens the official source in the browser.">Open official source</a>
+                </div>
+
+                <div id="episode-block">
+                  <div class="ep-head"><h3>Episodes</h3><span id="watch-ep-count">5 episodes</span></div>
+                  <div id="ep-list">
+                    <button class="ep-row" data-ep="1" aria-current="false">
+                      <span class="ep-num">EP 1</span>
+                      <span class="ep-body"><b>The ford</b><small>Official · watched</small></span>
+                      <svg class="ic ep-check"><use href="#i-check"></use></svg>
+                    </button>
+                    <button class="ep-row" data-ep="2" aria-current="false">
+                      <span class="ep-num">EP 2</span>
+                      <span class="ep-body"><b>The flooded orchard</b><small>Official · watched</small></span>
+                      <svg class="ic ep-check"><use href="#i-check"></use></svg>
+                    </button>
+                    <button class="ep-row" data-ep="3" aria-current="false">
+                      <span class="ep-num">EP 3</span>
+                      <span class="ep-body"><b>The other shore</b><small>Official · watched</small></span>
+                      <svg class="ic ep-check"><use href="#i-check"></use></svg>
+                    </button>
+                    <button class="ep-row" data-ep="4" aria-current="true">
+                      <span class="ep-num">EP 4</span>
+                      <span class="ep-body"><b>The village that vanished</b><small>Official · now playing</small></span>
+                      <svg class="ic ep-check"><use href="#i-check"></use></svg>
+                    </button>
+                    <button class="ep-row" data-ep="5" aria-current="false">
+                      <span class="ep-num">EP 5</span>
+                      <span class="ep-body"><b>River of stars</b><small>Official</small></span>
+                      <svg class="ic ep-check"><use href="#i-check"></use></svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="section-head"><h2>More like this</h2></div>
+                <div class="rail">
+                  <article class="card">
+                    <button class="card-main" data-open="lanterns" aria-label="Paper Lanterns, 12 episodes, free">
+                      <div class="art c"><span class="glyph">Paper Lanterns</span></div>
+                      <div class="card-body"><strong>Paper Lanterns</strong><span>Official · 12 episodes</span></div>
+                    </button>
+                    <button class="heart" data-heart="lanterns" aria-pressed="false" aria-label="Save Paper Lanterns"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+                  </article>
+                  <article class="card">
+                    <button class="card-main" data-open="clock" aria-label="The Clockmaker, public domain film, free">
+                      <div class="art d"><span class="glyph">The Clockmaker</span></div>
+                      <div class="card-body"><strong>The Clockmaker</strong><span>Public domain · 1927</span></div>
+                    </button>
+                    <button class="heart" data-heart="clock" aria-pressed="false" aria-label="Save The Clockmaker"><span class="dot"><svg class="ic"><use href="#i-heart"></use></svg></span></button>
+                  </article>
+                </div>
+              </div>
+            </div>
+          </section>
+
+        </div><!-- /screen-stack -->
+
+        <nav class="tabbar" id="tabbar" role="tablist" aria-label="Primary">
+          <button class="tab" role="tab" data-go="home" aria-selected="true" aria-label="Home"><svg class="ic"><use href="#i-home"></use></svg><span>Home</span></button>
+          <button class="tab" role="tab" data-go="browse" aria-selected="false" aria-label="Browse"><svg class="ic"><use href="#i-grid"></use></svg><span>Browse</span></button>
+          <button class="tab" role="tab" data-go="search" aria-selected="false" aria-label="Search"><svg class="ic"><use href="#i-search"></use></svg><span>Search</span></button>
+          <button class="tab" role="tab" data-go="list" aria-selected="false" aria-label="My List"><svg class="ic"><use href="#i-heart"></use></svg><span>My List</span></button>
+          <button class="tab" role="tab" data-go="more" aria-selected="false" aria-label="More"><svg class="ic"><use href="#i-more"></use></svg><span>More</span></button>
+        </nav>
+        <div class="home-bar" aria-hidden="true"><span></span></div>
+
+        <!-- CONSENT SHEET -->
+        <div class="sheet-layer" id="consent-layer" role="presentation">
+          <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="consent-title" aria-describedby="consent-body" tabindex="-1">
+            <div class="sheet-head">
+              <h3 id="consent-title">Your privacy choices</h3>
+              <button class="sheet-close" data-close="consent-layer" aria-label="Close"><svg class="ic"><use href="#i-close"></use></svg></button>
+            </div>
+            <p class="sheet-body" id="consent-body">We use essential storage to keep you signed in and remember this choice. Optional analytics help us find broken playback and improve the catalog. They are off unless you turn them on.</p>
+            <div class="sheet-actions">
+              <button class="btn" data-consent="essential">Essential only</button>
+              <button class="btn" data-consent="choose" aria-expanded="false" aria-controls="consent-options">Choose</button>
+              <button class="btn" data-consent="optional">Accept optional</button>
+            </div>
+            <p class="note" id="consent-status" role="status" aria-live="polite">No choice yet. All optional settings are off.</p>
+            <div id="consent-options" hidden>
+              <div class="switches">
+                <div class="switch-row">
+                  <p>Help improve MovieArena<small>Anonymous playback and error events. No titles attached. Off by default.</small></p>
+                  <button class="switch" role="switch" aria-checked="false" data-switch="analytics" aria-label="Optional analytics"></button>
+                </div>
+                <div class="switch-row">
+                  <p>Use my activity to choose ads<small>Off by default. Ads still appear, but they stay contextual.</small></p>
+                  <button class="switch" role="switch" aria-checked="false" data-switch="ads" aria-label="Ad personalisation"></button>
+                </div>
+                <div class="switch-row">
+                  <p>Send me catalog updates<small>No more than once a month.</small></p>
+                  <button class="switch" role="switch" aria-checked="false" data-switch="email" aria-label="Marketing email"></button>
+                </div>
+              </div>
+            </div>
+            <p class="note">Change this any time in More → Privacy choices.</p>
+          </div>
+        </div>
+
+        <!-- CLEAR SHEET -->
+        <div class="sheet-layer" id="clear-layer" role="presentation">
+          <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="clear-title" aria-describedby="clear-body" tabindex="-1">
+            <div class="sheet-head">
+              <h3 id="clear-title">Clear My List?</h3>
+              <button class="sheet-close" data-close="clear-layer" aria-label="Close"><svg class="ic"><use href="#i-close"></use></svg></button>
+            </div>
+            <p class="sheet-body" id="clear-body">All 4 saved titles will be removed from this profile. Your watch progress is kept.</p>
+            <div class="sheet-actions row">
+              <button class="btn" data-close="clear-layer" id="clear-cancel">Cancel</button>
+              <button class="btn danger" id="clear-confirm">Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SIGN-IN SHEET -->
+        <div class="sheet-layer" id="signin-layer" role="presentation">
+          <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="signin-title" aria-describedby="signin-body" tabindex="-1">
+            <div class="sheet-head">
+              <h3 id="signin-title">Sign in</h3>
+              <button class="sheet-close" data-close="signin-layer" aria-label="Close"><svg class="ic"><use href="#i-close"></use></svg></button>
+            </div>
+            <p class="sheet-body" id="signin-body">Optional. Guest mode keeps working. Use a magic link, Google, or Apple.</p>
+            <label class="sr" for="signin-email">Email address</label>
+            <input id="signin-email" type="email" placeholder="you@example.com" style="width:100%;min-height:46px;margin-top:10px;border-radius:8px;border:1px solid var(--border-control);background:var(--surface-sunken);color:var(--content-primary);padding:0 10px;font-size:13px">
+            <div class="sheet-actions">
+              <button class="btn primary" id="send-link">Send magic link</button>
+              <button class="btn" data-toast="Google sign-in follows the same consent screen.">Continue with Google</button>
+              <button class="btn" data-toast="Apple sign-in follows the same consent screen.">Continue with Apple</button>
+            </div>
+            <p class="note">Tokens are stored in SecureStore, never AsyncStorage.</p>
+          </div>
+        </div>
+
+        <div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-action" hidden>Undo</button></div>
+      </div><!-- /device -->
+
+      <p class="stage-note">Abstract CSS art and placeholder titles. No catalog imagery. Tap tabs, cards, hearts, and the player controls.</p>
+    </div><!-- /stage -->
+
+    <div class="panel">
+      <div class="panel-tabs" role="tablist" aria-label="Parity detail">
+        <button role="tab" aria-selected="true" data-panel="contract">Contract</button>
+        <button role="tab" aria-selected="false" data-panel="entry">Watch entry</button>
+        <button role="tab" aria-selected="false" data-panel="gaps">Gap audit</button>
+        <button role="tab" aria-selected="false" data-panel="tokens">Tokens</button>
+      </div>
+
+      <section class="panel-section" data-panel-body="contract">
+        <div class="panel-card">
+          <h2>Destinations</h2>
+          <p>Phase 3 is binding. Native changes the chrome, never the destination or the name.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Destination</th><th>Native form</th><th>Today</th></tr></thead>
+              <tbody>
+                <tr><td>Home</td><td class="loc">tab home</td><td><span class="pill yes">Exists</span></td></tr>
+                <tr><td>Browse</td><td class="loc">tab browse + section</td><td><span class="pill no">Missing</span></td></tr>
+                <tr><td>Search</td><td class="loc">tab search</td><td><span class="pill yes">Exists</span></td></tr>
+                <tr><td>My List</td><td class="loc">tab list</td><td><span class="pill yes">Exists</span></td></tr>
+                <tr><td>More</td><td class="loc">tab more</td><td><span class="pill yes">Exists</span></td></tr>
+                <tr><td>Watch</td><td class="loc">push watch/:slug</td><td><span class="pill part">Partial</span></td></tr>
+                <tr><td>Continue Watching</td><td class="loc">Home rail; List header</td><td><span class="pill part">Partial</span></td></tr>
+                <tr><td>Account</td><td class="loc">push account/:tab</td><td><span class="pill no">Missing</span></td></tr>
+                <tr><td>Profiles</td><td class="loc">push account/profiles</td><td><span class="pill no">Missing</span></td></tr>
+                <tr><td>Consent</td><td class="loc">modal over any screen</td><td><span class="pill no">Missing</span></td></tr>
+                <tr><td>Sign in</td><td class="loc">modal</td><td><span class="pill no">Missing</span></td></tr>
+                <tr><td>About</td><td class="loc">native copy screen</td><td><span class="pill no">Missing</span></td></tr>
+                <tr><td>Legal</td><td class="loc">native copy screen</td><td><span class="pill no">Missing</span></td></tr>
+                <tr><td>Privacy</td><td class="loc">native copy screen</td><td><span class="pill no">Missing</span></td></tr>
+                <tr><td>Kids</td><td class="loc">profile mode</td><td><span class="pill no">Missing</span></td></tr>
+                <tr><td>Not found</td><td class="loc">inline state</td><td><span class="pill no">Missing</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="note"><b>Five tabs:</b> Home · Browse · Search · My List · More. <b>Tab bar:</b> 56pt + inset, 2pt accent rule, primary-colour label. <b>Watch:</b> per-tab stack, hardware back restores the exact origin.</p>
+        </div>
+        <div class="panel-card">
+          <h2>What changes on the device</h2>
+          <p><b>Theme:</b> one semantic object; light, dark, system; no raw hex. <b>Type:</b> 11pt floor, 200% dynamic type. <b>Targets:</b> 44pt. <b>Player:</b> native direct-file engine, WebView only for YouTube, mirror controls. <b>Trust:</b> consent before collection, guest-first, Kids restricted or no ad promise.</p>
+        </div>
+      </section>
+
+      <section class="panel-section" data-panel-body="entry" hidden>
+        <div class="panel-card">
+          <h2>Watch entry simulator</h2>
+          <p>Pick how the user arrives. The rule is locked: only an explicit resume starts playback.</p>
+          <div class="entry-buttons" role="group" aria-label="Entry type">
+            <button data-entry="resume" aria-pressed="true">Continue / Resume</button>
+            <button data-entry="hero" aria-pressed="false">Hero, no progress</button>
+            <button data-entry="card" aria-pressed="false">Card / rail</button>
+            <button data-entry="search" aria-pressed="false">Search result</button>
+            <button data-entry="deeplink" aria-pressed="false">Deep link</button>
+            <button data-entry="autoplay" aria-pressed="false">Autoplay next</button>
+          </div>
+          <div class="entry-result" role="status" aria-live="polite">
+            <h3 id="entry-title">Continue Watching</h3>
+            <dl>
+              <dt>Episode</dt><dd id="entry-ep">Episode 4</dd>
+              <dt>Position</dt><dd id="entry-pos">12:34</dd>
+              <dt>Playing</dt><dd id="entry-play">Yes</dd>
+              <dt>Why</dt><dd id="entry-why">Explicit Resume action</dd>
+            </dl>
+          </div>
+          <p class="note">The current build restores the last episode and autoplays from every entry. That is finding 9 in the audit.</p>
+        </div>
+        <div class="panel-card">
+          <h2>The opening state must say what happened</h2>
+          <p>Watch shows “Opened paused” or “Resumed · 12:34” under the title. A user never has to guess whether playback was their choice.</p>
+        </div>
+      </section>
+
+      <section class="panel-section" data-panel-body="gaps" hidden>
+        <div class="panel-card">
+          <h2>Gap audit</h2>
+          <p>32 findings from the shipped source. P0 blocks launch, P1 blocks the phase, P2 is polish.</p>
+          <div class="filters" role="group" aria-label="Filter findings">
+            <button data-sev="all" aria-pressed="true">All</button>
+            <button data-sev="P0" aria-pressed="false">P0</button>
+            <button data-sev="P1" aria-pressed="false">P1</button>
+            <button data-sev="P2" aria-pressed="false">P2</button>
+          </div>
+          <p class="count-line" id="gap-count"></p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>Location</th><th>Finding</th><th>Sev</th><th>Required change</th></tr></thead>
+              <tbody id="gap-rows"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel-section" data-panel-body="tokens" hidden>
+        <div class="panel-card">
+          <h2>Live tokens</h2>
+          <p id="token-mode">Dark values. Switch the page theme to compare.</p>
+          <div class="tokens" id="token-grid"></div>
+        </div>
+        <div class="panel-card">
+          <h2>Computed contrast</h2>
+          <p>Ratios are computed from the hex values, not estimated. 4.5:1 is the body floor; 3:1 is the large-text floor.</p>
+          <div class="contrast" id="contrast-list"></div>
+        </div>
+        <div class="panel-card">
+          <h2>Type and targets</h2>
+          <p>Display 34 · Title 26 · Heading 18 · Body 14 · Label 12 · Caption 11 · Micro 11. Every control is at least 44×44pt. The heart keeps a 28pt visual inside a 44pt hit area.</p>
+        </div>
+      </section>
+
+      <p class="foot"><b>Preview only.</b> This page is a parity decision aid, not the Expo app. The full contract, 32-item audit, implementation order, and 22 gate decisions are in <code>docs/design/phase-11-native-parity.md</code>. Source review only; no device, emulator, or user test was run.</p>
+    </div><!-- /panel -->
+  </div><!-- /layout -->
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var root = document.documentElement;
+  var mq = matchMedia("(prefers-color-scheme: dark)");
+  var reduceMQ = matchMedia("(prefers-reduced-motion: reduce)");
+  var THEME_KEY = "ma.preview11.theme";
+  var resolvedEl = document.getElementById("resolved");
+  var device = document.getElementById("device");
+  var screenStack = document.getElementById("screen-stack");
+  var appHead = document.getElementById("app-head");
+  var tabbar = document.getElementById("tabbar");
+  var homeBar = document.querySelector(".home-bar");
+  var screens = [].slice.call(document.querySelectorAll("[data-screen]"));
+  var tabs = [].slice.call(document.querySelectorAll(".tab"));
+
+  /* ---------- theme ---------- */
+  function readMode() {
+    try { return localStorage.getItem(THEME_KEY) || "system"; } catch (e) { return "system"; }
+  }
+  function resolveTheme(mode) {
+    return mode === "system" ? (mq.matches ? "dark" : "light") : mode;
+  }
+  function applyMode(mode, animate) {
+    var theme = resolveTheme(mode);
+    if (animate && !reduceMQ.matches) {
+      root.classList.add("switching");
+      setTimeout(function () { root.classList.remove("switching"); }, 190);
+    }
+    root.dataset.theme = theme;
+    root.style.colorScheme = theme;
+    try { localStorage.setItem(THEME_KEY, mode); } catch (e) {}
+    [].forEach.call(document.querySelectorAll("[data-mode]"), function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.mode === mode));
+    });
+    resolvedEl.textContent = mode === "system" ? "system → " + theme : theme;
+    renderTokens();
+    renderContrast();
+  }
+  [].forEach.call(document.querySelectorAll("[data-mode]"), function (b) {
+    b.addEventListener("click", function () { applyMode(b.dataset.mode, true); });
+  });
+  mq.addEventListener("change", function () { if (readMode() === "system") applyMode("system", false); });
+
+  /* ---------- device size ---------- */
+  [].forEach.call(document.querySelectorAll("[data-size-btn]"), function (b) {
+    b.addEventListener("click", function () {
+      device.dataset.size = b.dataset.sizeBtn;
+      [].forEach.call(document.querySelectorAll("[data-size-btn]"), function (x) {
+        x.setAttribute("aria-pressed", String(x === b));
+      });
+    });
+  });
+
+  /* ---------- screens ---------- */
+  var prevScreen = "home";
+  var lastTrigger = null;
+  var currentScreen = "home";
+  function showScreen(name, opts) {
+    opts = opts || {};
+    if (currentScreen === "watch" && name !== "watch" && watchState.playing) {
+      watchState.playing = false;
+      stopTicker();
+      renderWatch();
+      showToast("Paused. Background play is off.");
+    }
+    if (currentScreen === "watch" && name !== "watch") watchHistory = [];
+    if (name !== "watch" && currentScreen !== "watch") prevScreen = name;
+    currentScreen = name;
+    screens.forEach(function (s) { s.classList.toggle("active", s.dataset.screen === name); });
+    var watch = name === "watch";
+    appHead.style.display = watch ? "none" : "flex";
+    tabbar.classList.toggle("hidden", watch);
+    homeBar.style.display = watch ? "none" : "flex";
+    tabs.forEach(function (t) {
+      var sel = t.dataset.go === name;
+      t.setAttribute("aria-selected", String(sel));
+      t.tabIndex = sel ? 0 : -1;
+    });
+    if (!opts.keepScroll) screenStack.scrollTop = 0;
+    if (name === "search") {
+      var input = document.getElementById("search-input");
+      if (input) input.focus({ preventScroll: true });
+    }
+  }
+  document.addEventListener("click", function (e) {
+    var gov = e.target.closest("[data-go]");
+    if (gov) {
+      e.preventDefault();
+      var name = gov.dataset.go;
+      if (name === currentScreen && name !== "watch") { screenStack.scrollTop = 0; return; }
+      showScreen(name);
+      gov.blur();
+    }
+  });
+
+  /* ---------- watch data ---------- */
+  var SHOWS = {
+    river: { title: "River of Stars", source: "official", kind: "Official channel", eps: 5, duration: 1440, years: "", epTitles: ["The ford", "The flooded orchard", "The other shore", "The village that vanished", "River of stars"] },
+    lanterns: { title: "Paper Lanterns", source: "official", kind: "Official channel", eps: 12, duration: 1440, epTitles: ["First light", "The workshop", "Paper and wind", "A small fire", "The long street"] },
+    silent: { title: "The Silent House", source: "official", kind: "Official channel", eps: 8, duration: 1320, epTitles: ["The key", "The hallway", "The locked room", "The letter", "The garden"] },
+    robot: { title: "Little Robot", source: "official", kind: "Official channel", eps: 6, duration: 720, epTitles: ["Boot", "The hill", "A friend", "Rain", "The long way home"] },
+    clock: { title: "The Clockmaker", source: "archive", kind: "Public domain", eps: 1, duration: 5280, years: "1927", epTitles: ["Feature film"] },
+    salt: { title: "Salt & Smoke", source: "archive", kind: "Public domain", eps: 1, duration: 4980, years: "1931", epTitles: ["Feature film"] },
+    north: { title: "Northern Lights", source: "archive", kind: "Public domain", eps: 1, duration: 1980, years: "1929", epTitles: ["Feature film"] },
+    sunday: { title: "Sunday Matinee", source: "archive", kind: "Public domain", eps: 1, duration: 5340, years: "1934", epTitles: ["Feature film"] }
+  };
+  var watchState = { slug: "river", ep: 1, pos: 0, playing: false, subtitles: false, muted: false, quality: "Auto", speed: "1x", full: false };
+  var watchHistory = [];
+  var ticker = null;
+  var countdown = null;
+  var countdownLeft = 8;
+
+  function show() { return SHOWS[watchState.slug] || SHOWS.river; }
+  function fmt(sec) {
+    sec = Math.max(0, Math.round(sec));
+    var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+    var ss = String(s).padStart(2, "0");
+    return h ? h + ":" + String(m).padStart(2, "0") + ":" + ss : m + ":" + ss;
+  }
+  function stopTicker() { if (ticker) { clearInterval(ticker); ticker = null; } }
+  function startTicker() {
+    stopTicker();
+    ticker = setInterval(function () {
+      if (!watchState.playing) { stopTicker(); return; }
+      watchState.pos = Math.min(show().duration, watchState.pos + 1);
+      if (watchState.pos >= show().duration) {
+        watchState.playing = false;
+        stopTicker();
+        renderWatch();
+        if (canNext()) startCountdown();
+        return;
+      }
+      renderWatch();
+    }, 1000);
+  }
+  function canNext() { var s = show(); return s.source === "official" && watchState.ep < s.eps; }
+
+  function setPlayIcon(el, playing, withLabel) {
+    var use = el.querySelector("use");
+    if (use) use.setAttribute("href", playing ? "#i-pause" : "#i-play");
+    if (withLabel) el.setAttribute("aria-label", playing ? "Pause" : "Play");
+  }
+  function renderWatch() {
+    var s = show();
+    var archive = s.source === "archive";
+    document.getElementById("watch-top-title").textContent = s.title;
+    document.getElementById("watch-title").textContent = s.title;
+    var badge = document.getElementById("watch-source-badge");
+    badge.textContent = archive ? "Public domain" : "Official";
+    badge.className = "badge " + (archive ? "pd" : "official");
+    var meta = archive
+      ? "Public domain · " + s.years + " · " + fmt(s.duration) + " · " + (watchState.playing ? "Playing" : "Opened paused")
+      : s.kind + " · " + s.eps + " episodes · " + (watchState.playing ? "Playing" : (watchState.pos > 0 ? "Resumed · " + fmt(watchState.pos) : "Opened paused"));
+    document.getElementById("watch-meta").textContent = meta;
+    document.getElementById("source-text").textContent = archive
+      ? "Public-domain film streamed through MovieArena's range-aware relay. Only files the source serves publicly."
+      : "Official embed from the rights-holder's channel. Playback stays on the official player.";
+    document.getElementById("episode-block").hidden = archive;
+    document.getElementById("watch-ep-count").textContent = s.eps + (s.eps === 1 ? " episode" : " episodes");
+
+    var seek = document.getElementById("seek");
+    seek.max = String(s.duration);
+    seek.value = String(watchState.pos);
+    seek.setAttribute("aria-valuetext", fmt(watchState.pos) + " of " + fmt(s.duration));
+    document.getElementById("watch-time").textContent = fmt(watchState.pos);
+    document.getElementById("watch-state").textContent = watchState.playing ? "Playing" : "Paused";
+    document.getElementById("mirror-state").textContent = (watchState.playing ? "Playing" : "Paused") + " · " + fmt(watchState.pos);
+
+    var big = document.getElementById("play-big");
+    setPlayIcon(big, watchState.playing, true);
+    var mirror = document.getElementById("mirror-play");
+    setPlayIcon(mirror, watchState.playing, true);
+    mirror.querySelector("span").textContent = watchState.playing ? "Pause" : "Play";
+
+    var mute = document.getElementById("mute");
+    mute.setAttribute("aria-pressed", String(watchState.muted));
+    mute.setAttribute("aria-label", watchState.muted ? "Unmute" : "Mute");
+    mute.querySelector("use").setAttribute("href", watchState.muted ? "#i-muted" : "#i-volume");
+    mute.querySelector("span").textContent = watchState.muted ? "Unmute" : "Mute";
+
+    var sub = document.getElementById("subtitles");
+    sub.setAttribute("aria-pressed", String(watchState.subtitles));
+    sub.setAttribute("aria-label", watchState.subtitles ? "Subtitles on" : "Subtitles off");
+    sub.querySelector("span").textContent = watchState.subtitles ? "Subtitles on" : "Subtitles";
+
+    var fs = document.getElementById("fullscreen");
+    fs.setAttribute("aria-label", watchState.full ? "Exit fullscreen" : "Fullscreen");
+    fs.querySelector("span").textContent = watchState.full ? "Exit" : "Fullscreen";
+    document.getElementById("watch-screen").classList.toggle("fullscreen", watchState.full);
+
+    [].forEach.call(document.querySelectorAll("#ep-list .ep-row"), function (row) {
+      var n = Number(row.dataset.ep);
+      row.setAttribute("aria-current", String(n === watchState.ep));
+      var small = row.querySelector("small");
+      if (small) small.textContent = n === watchState.ep ? "Official · now playing" : (n < watchState.ep ? "Official · watched" : "Official");
+    });
+  }
+  function openWatch(slug, resume) {
+    var s = SHOWS[slug] || SHOWS.river;
+    if (currentScreen === "watch") {
+      watchHistory.push({ slug: watchState.slug, ep: watchState.ep, pos: watchState.pos });
+    } else {
+      watchHistory = [];
+    }
+    watchState.slug = slug;
+    watchState.subtitles = false;
+    watchState.muted = false;
+    watchState.full = false;
+    watchState.quality = "Auto";
+    watchState.speed = "1x";
+    document.getElementById("quality").selectedIndex = 0;
+    document.getElementById("speed").selectedIndex = 0;
+    if (resume) {
+      watchState.ep = Math.min(4, s.eps);
+      watchState.pos = s.source === "official" ? 754 : 0;
+      watchState.playing = true;
+      startTicker();
+    } else {
+      watchState.ep = 1;
+      watchState.pos = 0;
+      watchState.playing = false;
+      stopTicker();
+    }
+    cancelCountdown();
+    showScreen("watch");
+    renderWatch();
+    document.getElementById("watch-back").focus({ preventScroll: true });
+  }
+  document.addEventListener("click", function (e) {
+    var opener = e.target.closest("[data-open]");
+    if (opener) {
+      e.preventDefault();
+      if (currentScreen !== "watch") lastTrigger = opener;
+      openWatch(opener.dataset.open, opener.dataset.resume === "1");
+    }
+  });
+  document.getElementById("watch-back").addEventListener("click", function () {
+    if (watchHistory.length) {
+      var prev = watchHistory.pop();
+      watchState.slug = prev.slug;
+      watchState.ep = prev.ep;
+      watchState.pos = prev.pos;
+      watchState.playing = false;
+      stopTicker();
+      cancelCountdown();
+      renderWatch();
+      document.getElementById("watch-back").focus({ preventScroll: true });
+      return;
+    }
+    showScreen(prevScreen);
+    if (lastTrigger && lastTrigger.focus) lastTrigger.focus({ preventScroll: true });
+  });
+  function togglePlay() {
+    if (watchState.pos >= show().duration) watchState.pos = 0;
+    watchState.playing = !watchState.playing;
+    if (watchState.playing) startTicker(); else stopTicker();
+    renderWatch();
+  }
+  ["play-big", "mirror-play"].forEach(function (id) {
+    document.getElementById(id).addEventListener("click", togglePlay);
+  });
+  function seekBy(delta) {
+    watchState.pos = Math.max(0, Math.min(show().duration, watchState.pos + delta));
+    renderWatch();
+  }
+  document.getElementById("back10").addEventListener("click", function () { seekBy(-10); });
+  document.getElementById("fwd10").addEventListener("click", function () { seekBy(10); });
+  document.getElementById("seek").addEventListener("input", function (e) {
+    watchState.pos = Number(e.target.value);
+    renderWatch();
+  });
+  document.getElementById("mute").addEventListener("click", function () {
+    watchState.muted = !watchState.muted;
+    renderWatch();
+  });
+  document.getElementById("subtitles").addEventListener("click", function () {
+    watchState.subtitles = !watchState.subtitles;
+    renderWatch();
+    showToast(watchState.subtitles ? "Subtitles on." : "Subtitles off.");
+  });
+  document.getElementById("fullscreen").addEventListener("click", function () {
+    watchState.full = !watchState.full;
+    renderWatch();
+  });
+  document.getElementById("quality").addEventListener("change", function (e) {
+    watchState.quality = e.target.value.replace("Quality: ", "");
+    showToast("Quality: " + watchState.quality + (watchState.quality === "Auto" ? "" : " (YouTube may override this)."));
+  });
+  document.getElementById("speed").addEventListener("change", function (e) {
+    watchState.speed = e.target.value.replace("Speed: ", "");
+    showToast("Speed: " + watchState.speed + ".");
+  });
+  document.querySelectorAll("#ep-list .ep-row").forEach(function (row) {
+    row.addEventListener("click", function () {
+      watchState.ep = Number(row.dataset.ep);
+      watchState.pos = 0;
+      watchState.playing = false;
+      stopTicker();
+      cancelCountdown();
+      renderWatch();
+    });
+  });
+
+  function renderCountdown() {
+    document.getElementById("upnext-text").textContent = "Up next: Episode " + (watchState.ep + 1) + " in " + countdownLeft + "s";
+  }
+  function startCountdown() {
+    if (!canNext()) { showToast("No next episode for this title."); return; }
+    cancelCountdown();
+    countdownLeft = 8;
+    document.getElementById("upnext").hidden = false;
+    renderCountdown();
+    countdown = setInterval(function () {
+      countdownLeft -= 1;
+      if (countdownLeft <= 0) {
+        clearInterval(countdown);
+        countdown = null;
+        document.getElementById("upnext").hidden = true;
+        watchState.ep += 1;
+        watchState.pos = 0;
+        watchState.playing = true;
+        startTicker();
+        renderWatch();
+        showToast("Playing Episode " + watchState.ep + ".");
+      } else {
+        renderCountdown();
+      }
+    }, 1000);
+  }
+  function cancelCountdown() {
+    if (countdown) { clearInterval(countdown); countdown = null; }
+    document.getElementById("upnext").hidden = true;
+  }
+  document.getElementById("demo-autoplay").addEventListener("click", startCountdown);
+  document.getElementById("upnext-cancel").addEventListener("click", function () {
+    cancelCountdown();
+    watchState.playing = false;
+    renderWatch();
+    showToast("Autoplay cancelled.");
+  });
+  document.getElementById("upnext-play").addEventListener("click", function () {
+    cancelCountdown();
+    if (canNext()) {
+      watchState.ep += 1;
+      watchState.pos = 0;
+      watchState.playing = true;
+      startTicker();
+      renderWatch();
+    }
+  });
+
+  /* ---------- panel tabs ---------- */
+  var panelTabs = [].slice.call(document.querySelectorAll(".panel-tabs [data-panel]"));
+  panelTabs.forEach(function (b) {
+    b.addEventListener("click", function () {
+      panelTabs.forEach(function (x) { x.setAttribute("aria-selected", String(x === b)); });
+      [].forEach.call(document.querySelectorAll("[data-panel-body]"), function (p) {
+        p.hidden = p.dataset.panelBody !== b.dataset.panel;
+      });
+    });
+  });
+
+  /* ---------- entry simulator ---------- */
+  var ENTRIES = {
+    resume: ["Continue Watching", "Episode 4", "12:34", "Yes", "Explicit Resume action"],
+    hero: ["Hero, no progress", "Episode 1", "0:00", "No", "No saved position to resume"],
+    card: ["Card or rail", "Episode 1", "0:00", "No", "Browse entry opens paused"],
+    search: ["Search result", "Episode 1", "0:00", "No", "Browse entry opens paused"],
+    deeplink: ["Deep link", "Linked episode", "0:00", "No", "Only resume=1 resumes"],
+    autoplay: ["Autoplay next", "Next episode", "0:00", "Yes, after 8s", "Opt-in countdown, cancelable"]
+  };
+  var entryButtons = [].slice.call(document.querySelectorAll("[data-entry]"));
+  entryButtons.forEach(function (b) {
+    b.addEventListener("click", function () {
+      var data = ENTRIES[b.dataset.entry];
+      entryButtons.forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+      document.getElementById("entry-title").textContent = data[0];
+      document.getElementById("entry-ep").textContent = data[1];
+      document.getElementById("entry-pos").textContent = data[2];
+      document.getElementById("entry-play").textContent = data[3];
+      document.getElementById("entry-why").textContent = data[4];
+    });
+  });
+
+  /* ---------- gap audit ---------- */
+  var GAPS = [
+    [1, "theme.js · app.json", "Hard-coded dark palette; forced dark; light status bar", "P0", "Semantic theme object; system/dark/light"],
+    [2, "components.js · screens", "White on #ff5c47 is 3.06:1", "P0", "Action ink on every accent fill"],
+    [3, "components.js", "Heart nested, 28pt, unlabelled, no state", "P0", "Sibling 44pt control with label and state"],
+    [4, "WatchScreen.jsx", "Autoplays with sound on open", "P0", "Open paused; Play is explicit"],
+    [5, "WatchScreen.jsx", "Caption kill loop suppresses subtitles", "P0", "Remove loop; Subtitles control"],
+    [6, "WatchScreen.jsx", "No native mirror controls", "P0", "Play, seek, mute, subtitles, quality, fullscreen"],
+    [7, "App.jsx", "Four tabs; Browse missing", "P0", "Five locked tabs with Browse"],
+    [8, "App.jsx", "Tab bar below 44pt; no role, state, or inset", "P0", "56pt + inset; role tab; selected"],
+    [9, "App.jsx · WatchScreen.jsx", "Every entry restores and autoplays", "P0", "Entry matrix: paused unless Resume"],
+    [10, "App.jsx · data.js", "Progress has episode but no seconds", "P0", "Position, duration, updated-at, profile"],
+    [11, "MoreScreen.jsx", "“No accounts, no ads, no analytics”", "P0", "Phase 10 copy; consent and account surfaces"],
+    [12, "App-wide", "No consent, account, profiles, privacy, export, deletion, Kids", "P0", "Native screens and modals"],
+    [13, "WatchScreen.jsx", "Autoplay next after 900ms, default on, no cancel", "P1", "Opt-in, 8s countdown, cancel"],
+    [14, "App.jsx", "Watch is a boolean shell; no stack or origin restore", "P1", "Per-tab stacks and restoration"],
+    [15, "HomeScreen.jsx", "Error copy leaks env var; no catalog cache", "P1", "User copy; cached catalog; diagnostics"],
+    [16, "WatchScreen.jsx", "No in-player error; watched recorded on failure", "P1", "Error replaces player; retry + source"],
+    [17, "WatchScreen.jsx", "HLS from jsdelivr; originWhitelist *", "P1", "Native media engine; restricted origins"],
+    [18, "WatchScreen.jsx", "No quality or speed control", "P1", "Auto quality, levels, speed menu"],
+    [19, "WatchScreen.jsx", "No subtitle file or transcript path", "P1", "WebVTT/SRT; transcript; no third party"],
+    [20, "HomeScreen.jsx · components.js", "Fixed 320pt hero; 8–9.5pt text; type clips", "P1", "minHeight, wrapping, 11pt floor, 200%"],
+    [21, "components.js · App.jsx", "No reduce-motion; rank text shadow", "P1", "Reduce-motion branch; solid rank scrim"],
+    [22, "All screens", "Raw accent2, gold, free, #7d849c, #cfddff", "P1", "Phase 5 semantic tokens only"],
+    [23, "HomeScreen · App · components", "TRENDING №1, Watch now, 1,200+, Top 10", "P1", "Phase 10 lexicon; source-aware labels"],
+    [24, "App-wide", "No ad slots or labels; no Kids ad restriction", "P1", "Labelled contextual slots; no Archive pre-roll"],
+    [25, "SearchScreen.jsx", "No result announcement, history, or hot words", "P2", "Announce count; local history; useful empty state"],
+    [26, "MoreScreen.jsx", "Clear uses Alert; no undo; copy mismatch", "P2", "Destructive sheet; verb repeat; undo"],
+    [27, "MoreScreen.jsx", "About and Legal open browser; no Privacy", "P2", "Native copy screens"],
+    [28, "customLinks.js", "Static duplicate of the web registry", "P2", "Read operator link feed; one shape"],
+    [29, "App.jsx", "RN SafeAreaView is iOS-only; manual Android inset", "P2", "react-native-safe-area-context"],
+    [30, "App.jsx", "No tab re-tap-to-top, pull-to-refresh, persistence", "P2", "Add all three"],
+    [31, "MoreScreen.jsx", "“MovieArena v3”; no error boundary", "P2", "Read app version; add boundary"],
+    [32, "app.json", "No scheme, tablet, privacy manifest, data safety", "P2", "Add before store submission"]
+  ];
+  var sev = "all";
+  function renderGaps() {
+    var rows = GAPS.filter(function (g) { return sev === "all" || g[3] === sev; });
+    document.getElementById("gap-rows").innerHTML = rows.map(function (g) {
+      return "<tr><td class=\"num\">" + g[0] + "</td><td class=\"loc\">" + g[1] + "</td><td>" + g[2] + "</td><td><span class=\"pill " + g[3].toLowerCase() + "\">" + g[3] + "</span></td><td class=\"fix\">" + g[4] + "</td></tr>";
+    }).join("");
+    document.getElementById("gap-count").textContent = rows.length + " of " + GAPS.length + " findings";
+  }
+  [].forEach.call(document.querySelectorAll("[data-sev]"), function (b) {
+    b.addEventListener("click", function () {
+      sev = b.dataset.sev;
+      [].forEach.call(document.querySelectorAll("[data-sev]"), function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+      renderGaps();
+    });
+  });
+  renderGaps();
+
+  /* ---------- tokens and contrast ---------- */
+  var TOKENS = {
+    dark: { page: "#0c0e12", card: "#161a21", raised: "#1b2029", sunken: "#12151b", subtle: "#282e38", control: "#646e7c", primary: "#eef1f5", secondary: "#9aa3b2", action: "#ff5c47", ink: "#0c0e12", accentText: "#ff8a3d", focus: "#ff8a3d", success: "#8fcfa5", danger: "#ff9a8f" },
+    light: { page: "#f6f7f9", card: "#ffffff", raised: "#f2f4f7", sunken: "#eef1f5", subtle: "#e1e5ec", control: "#6f7a8c", primary: "#12151b", secondary: "#5c6472", action: "#ff5c47", ink: "#12151b", accentText: "#c0341f", focus: "#c0341f", success: "#2f6b3a", danger: "#b3261e" }
+  };
+  var ROLE_LABELS = [
+    ["page", "surface.page"], ["card", "surface.card"], ["raised", "surface.raised"],
+    ["subtle", "border.subtle"], ["control", "border.control"], ["primary", "content.primary"],
+    ["secondary", "content.secondary"], ["action", "action.primary"], ["ink", "action.ink"],
+    ["accentText", "accent text"], ["focus", "focus ring"], ["danger", "danger"]
+  ];
+  function renderTokens() {
+    var theme = root.dataset.theme === "light" ? "light" : "dark";
+    var t = TOKENS[theme];
+    document.getElementById("token-mode").textContent = (theme === "light" ? "Light" : "Dark") + " values. Switch the page theme to compare.";
+    document.getElementById("token-grid").innerHTML = ROLE_LABELS.map(function (r) {
+      return "<div class=\"token\"><div class=\"swatch\" style=\"background:" + t[r[0]] + "\"></div><div class=\"meta\"><b>" + r[1] + "</b><span>" + t[r[0]] + "</span></div></div>";
+    }).join("");
+    renderContrast();
+  }
+  function lum(hex) {
+    var h = hex.replace("#", "");
+    var rgb = [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+    var v = rgb.map(function (c) {
+      c = c / 255;
+      return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2];
+  }
+  function ratio(a, b) {
+    var l1 = lum(a), l2 = lum(b);
+    var hi = Math.max(l1, l2), lo = Math.min(l1, l2);
+    return (hi + 0.05) / (lo + 0.05);
+  }
+  function renderContrast() {
+    var theme = root.dataset.theme === "light" ? "light" : "dark";
+    var t = TOKENS[theme];
+    var pairs = [
+      ["Ink on accent fill", t.ink, t.action, 4.5],
+      ["White on accent fill", "#ffffff", t.action, 4.5],
+      ["Accent text on page", t.accentText, t.page, 4.5],
+      ["Secondary on card", t.secondary, t.card, 4.5],
+      ["Primary on page", t.primary, t.page, 4.5],
+      ["Danger on page", t.danger, t.page, 4.5],
+      ["Control border on page", t.control, t.page, 3]
+    ];
+    document.getElementById("contrast-list").innerHTML = pairs.map(function (p) {
+      var r = ratio(p[1], p[2]);
+      var pass = r >= p[3];
+      return "<div class=\"contrast-row\"><span style=\"width:14px;height:14px;border-radius:3px;border:1px solid var(--border-subtle);background:" + p[1] + "\"></span><span>" + p[0] + "</span><span class=\"ratio " + (pass ? "pass" : "fail") + "\">" + r.toFixed(2) + ":1 " + (pass ? "pass" : "fail") + "</span></div>";
+    }).join("");
+  }
+
+  /* ---------- search ---------- */
+  var searchInput = document.getElementById("search-input");
+  var searchClear = document.getElementById("search-clear");
+  var searchItems = [].slice.call(document.querySelectorAll("[data-search-item]"));
+  var searchHint = document.querySelector(".hint");
+  function renderSearch() {
+    var q = searchInput.value.trim().toLowerCase();
+    var hits = 0;
+    searchItems.forEach(function (item) {
+      var match = !q || item.dataset.title.toLowerCase().indexOf(q) !== -1;
+      item.style.display = match ? "" : "none";
+      if (match) hits += 1;
+    });
+    searchClear.hidden = !q;
+    document.getElementById("search-heading").textContent = q ? (hits + (hits === 1 ? " match" : " matches")) : "Popular right now";
+    document.getElementById("search-count").textContent = hits + (hits === 1 ? " title" : " titles");
+    document.getElementById("search-empty").hidden = hits !== 0;
+    document.getElementById("search-results").style.display = hits ? "" : "none";
+    searchHint.style.display = hits ? "none" : "block";
+    if (!hits) {
+      searchHint.innerHTML = "<b>No titles match “" + searchInput.value.trim() + "”.</b> Try fewer words or a genre. <span>Hot words:</span><div class=\"hot\"><button data-hot=\"anime\">anime</button><button data-hot=\"public domain\">public domain</button><button data-hot=\"animation\">animation</button><button data-hot=\"official\">official channel</button></div>";
+    }
+  }
+  searchInput.addEventListener("input", renderSearch);
+  searchClear.addEventListener("click", function () {
+    searchInput.value = "";
+    renderSearch();
+    searchInput.focus();
+  });
+  document.addEventListener("click", function (e) {
+    var hot = e.target.closest("[data-hot]");
+    if (hot) {
+      searchInput.value = hot.dataset.hot;
+      renderSearch();
+      searchInput.focus();
+    }
+  });
+  renderSearch();
+
+  /* ---------- hearts ---------- */
+  document.addEventListener("click", function (e) {
+    var heart = e.target.closest("[data-heart]");
+    if (!heart) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var on = heart.getAttribute("aria-pressed") !== "true";
+    heart.setAttribute("aria-pressed", String(on));
+    var slug = heart.dataset.heart;
+    var name = (SHOWS[slug] && SHOWS[slug].title) || slug;
+    heart.setAttribute("aria-label", (on ? "Remove " + name + " from My List" : "Save " + name));
+    showToast(on ? "Saved to My List." : "Removed from My List.");
+  });
+
+  /* ---------- sheets ---------- */
+  var sheetTrigger = null;
+  function openLayer(id) {
+    var layer = document.getElementById(id);
+    if (!layer) return;
+    layer.classList.add("open");
+    screenStack.style.overflow = "hidden";
+    sheetTrigger = document.activeElement;
+    var sheet = layer.querySelector(".sheet");
+    var first = layer.querySelector(".sheet-close") || layer.querySelector("button");
+    setTimeout(function () { (first || sheet).focus(); }, 0);
+  }
+  function closeLayer(id) {
+    var layer = document.getElementById(id);
+    if (!layer) return;
+    layer.classList.remove("open");
+    screenStack.style.overflow = "";
+    if (sheetTrigger && sheetTrigger.focus) sheetTrigger.focus({ preventScroll: true });
+  }
+  [].forEach.call(document.querySelectorAll("[data-close]"), function (b) {
+    b.addEventListener("click", function () { closeLayer(b.dataset.close); });
+  });
+  document.addEventListener("keydown", function (e) {
+    var open = document.querySelector(".sheet-layer.open");
+    if (!open) return;
+    if (e.key === "Escape") { e.preventDefault(); closeLayer(open.id); return; }
+    if (e.key !== "Tab") return;
+    var f = [].slice.call(open.querySelectorAll("button, input, select, [tabindex]:not([tabindex=\"-1\"])")).filter(function (el) { return !el.disabled && el.offsetParent !== null; });
+    if (!f.length) return;
+    if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+    else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+  });
+  [].forEach.call(document.querySelectorAll(".sheet-layer"), function (layer) {
+    layer.addEventListener("click", function (e) { if (e.target === layer) closeLayer(layer.id); });
+  });
+
+  document.getElementById("open-consent").addEventListener("click", function () { openLayer("consent-layer"); });
+  document.getElementById("open-clear").addEventListener("click", function () { openLayer("clear-layer"); });
+  document.getElementById("open-signin").addEventListener("click", function () { openLayer("signin-layer"); });
+  document.getElementById("send-link").addEventListener("click", function () {
+    closeLayer("signin-layer");
+    showToast("Check your email for the sign-in link.");
+  });
+
+  var consentButtons = [].slice.call(document.querySelectorAll("[data-consent]"));
+  function setConsentValue(text) { document.getElementById("consent-value").textContent = text; }
+  function setSwitches(on) {
+    [].forEach.call(document.querySelectorAll("[data-switch]"), function (s) {
+      s.setAttribute("aria-checked", String(on));
+    });
+  }
+  consentButtons.forEach(function (b) {
+    b.addEventListener("click", function () {
+      consentButtons.forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+      var options = document.getElementById("consent-options");
+      var status = document.getElementById("consent-status");
+      if (b.dataset.consent === "choose") {
+        var open = options.hidden;
+        options.hidden = !open;
+        b.setAttribute("aria-expanded", String(open));
+        status.textContent = open ? "Choose what is on. Everything starts off." : "Optional settings hidden. Your current choice is unchanged.";
+        setConsentValue(open ? "Choose optional" : "Optional off");
+      } else if (b.dataset.consent === "essential") {
+        options.hidden = true;
+        setSwitches(false);
+        status.textContent = "Essential storage only. Optional analytics, ad personalisation, and email are off.";
+        setConsentValue("Essential only");
+      } else {
+        options.hidden = true;
+        setSwitches(true);
+        status.textContent = "Optional analytics, ad personalisation, and email are on. You can change this later.";
+        setConsentValue("Optional on");
+      }
+    });
+  });
+  [].forEach.call(document.querySelectorAll("[data-switch]"), function (s) {
+    s.addEventListener("click", function () {
+      var on = s.getAttribute("aria-checked") !== "true";
+      s.setAttribute("aria-checked", String(on));
+      var onCount = document.querySelectorAll("[data-switch][aria-checked=\"true\"]").length;
+      document.getElementById("consent-status").textContent = onCount ? onCount + " optional setting" + (onCount === 1 ? "" : "s") + " on. The rest are unchanged." : "All optional settings are off.";
+      setConsentValue(onCount ? "Optional on (" + onCount + ")" : "Optional off");
+    });
+  });
+
+  var savedGrid = document.getElementById("saved-grid");
+  var listSub = document.getElementById("list-sub");
+  document.getElementById("clear-confirm").addEventListener("click", function () {
+    closeLayer("clear-layer");
+    savedGrid.style.display = "none";
+    listSub.textContent = "0 saved titles · stored on this device";
+    showToast("My List cleared.", "Undo", function () {
+      savedGrid.style.display = "";
+      listSub.textContent = "4 saved titles · stored on this device";
+      showToast("My List restored.");
+    });
+  });
+
+  /* ---------- toast ---------- */
+  var toast = document.getElementById("toast");
+  var toastText = document.getElementById("toast-text");
+  var toastAction = document.getElementById("toast-action");
+  var toastTimer = null;
+  function showToast(message, actionLabel, onAction) {
+    toastText.textContent = message;
+    toastAction.hidden = !actionLabel;
+    toastAction.textContent = actionLabel || "";
+    toastAction.onclick = onAction || null;
+    toast.classList.add("show");
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () {
+      toast.classList.remove("show");
+      toastAction.hidden = true;
+      toastAction.onclick = null;
+    }, 4000);
+  }
+  document.addEventListener("click", function (e) {
+    var t = e.target.closest("[data-toast]");
+    if (!t) return;
+    if (t.tagName === "A") e.preventDefault();
+    showToast(t.dataset.toast);
+  });
+
+  /* ---------- init ---------- */
+  renderTokens();
+  applyMode(readMode(), false);
+  showScreen(currentScreen, { keepScroll: true });
+  renderWatch();
+})();
+</script>
+</body>
+</html>

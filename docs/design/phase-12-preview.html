@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Phase 12 — QA and regression · MovieArena</title>
+<style>
+  :root {
+    --n0:#ffffff; --n50:#f6f7f9; --n75:#f2f4f7; --n100:#eef1f5; --n150:#e1e5ec;
+    --n200:#c6cdd9; --n300:#9aa3b2; --n400:#828d9d; --n500:#6f7a8c; --n600:#646e7c;
+    --n700:#5c6472; --n750:#4a5362; --n800:#3c4554; --n850:#282e38; --n900:#1b2029;
+    --n925:#161a21; --n950:#12151b; --n1000:#0c0e12; --n1100:#07080b;
+    --a50:#fff1ee; --a100:#ffe0da; --a200:#ffc4b8; --a300:#ff9f8e; --a400:#ff7a62;
+    --a500:#ff5c47; --a600:#e84632; --a700:#c0341f; --a800:#972817;
+    --w300:#ffb066; --w400:#ff8a3d; --w500:#e87325;
+    --s300:#8fcfa5; --s700:#2f6b3a; --wn300:#e8c37a; --wn700:#8a5a12;
+    --d300:#ff9a8f; --d700:#b3261e; --i300:#9db8ff; --i700:#2f5bb7;
+    --gold300:#c8b080; --gold700:#8a6a2f;
+    --radius:14px; --radius-sm:9px;
+    --font:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans",Ubuntu,Cantarell,"Helvetica Neue",sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+    --motion:160ms;
+  }
+  :root, [data-theme="dark"] {
+    color-scheme:dark;
+    --page:var(--n1000); --sunken:var(--n950); --card:var(--n925); --raised:var(--n900);
+    --border:var(--n850); --border-control:var(--n600); --border-strong:var(--n500);
+    --ink:var(--n100); --ink-2:var(--n300); --ink-3:var(--n400);
+    --action:var(--a500); --action-hover:var(--a400); --action-ink:var(--n1000);
+    --soft:rgba(255,92,71,.16); --softer:rgba(255,92,71,.07);
+    --link:var(--w400); --focus:var(--w400);
+    --ok:var(--s300); --warn:var(--wn300); --danger:var(--d300); --info:var(--i300);
+    --gold:var(--gold300);
+    --code-bg:var(--n1100); --hairline:rgba(255,255,255,.06);
+  }
+  [data-theme="light"] {
+    color-scheme:light;
+    --page:var(--n50); --sunken:var(--n100); --card:var(--n0); --raised:var(--n75);
+    --border:var(--n150); --border-control:var(--n500); --border-strong:var(--n600);
+    --ink:var(--n950); --ink-2:var(--n700); --ink-3:var(--n600);
+    --action:var(--a500); --action-hover:var(--a600); --action-ink:var(--n950);
+    --soft:rgba(255,92,71,.12); --softer:rgba(255,92,71,.06);
+    --link:var(--a700); --focus:var(--a700);
+    --ok:var(--s700); --warn:var(--wn700); --danger:var(--d700); --info:var(--i700);
+    --gold:var(--gold700);
+    --code-bg:var(--n100); --hairline:rgba(18,21,27,.08);
+  }
+  * { box-sizing:border-box; }
+  html { background:var(--page); }
+  body {
+    margin:0; background:var(--page); color:var(--ink);
+    font:15px/1.55 var(--font); -webkit-font-smoothing:antialiased;
+  }
+  ::selection { background:var(--soft); color:var(--ink); }
+  a { color:var(--link); text-underline-offset:3px; }
+  button, input, select { font:inherit; color:inherit; }
+  button { cursor:pointer; }
+  :focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
+  .skip {
+    position:absolute; left:16px; top:-60px; z-index:10; padding:10px 14px;
+    background:var(--action); color:var(--action-ink); border-radius:var(--radius-sm);
+    font-weight:800; text-decoration:none;
+  }
+  .skip:focus { top:16px; }
+  .wrap { max-width:1320px; margin:0 auto; padding:26px 22px 64px; }
+
+  .topbar { display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding-bottom:20px; border-bottom:1px solid var(--border); }
+  .brand { display:flex; align-items:center; gap:11px; margin-right:auto; min-width:0; }
+  .mark {
+    width:38px; height:38px; border-radius:11px; background:var(--action); color:var(--action-ink);
+    display:grid; place-items:center; font-weight:900; font-size:15px; letter-spacing:-.5px; flex:none;
+  }
+  .brand b { display:block; font-size:15px; letter-spacing:.2px; }
+  .brand span { display:block; font-size:11px; color:var(--ink-2); letter-spacing:.5px; text-transform:uppercase; font-weight:700; }
+  .seg { display:inline-flex; border:1px solid var(--border-control); border-radius:999px; padding:3px; gap:2px; background:var(--sunken); }
+  .seg button {
+    appearance:none; border:0; background:transparent; color:var(--ink-2);
+    padding:7px 12px; border-radius:999px; font-size:12px; font-weight:700; min-height:34px;
+    transition:background var(--motion), color var(--motion);
+  }
+  .seg button[aria-pressed="true"] { background:var(--card); color:var(--ink); border:1px solid var(--border); }
+  .status-pill {
+    display:inline-flex; align-items:center; gap:7px; padding:7px 12px; border-radius:999px;
+    border:1px solid var(--border); background:var(--card); font-size:12px; font-weight:700; color:var(--ink-2);
+  }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--warn); flex:none; }
+
+  header.hero { padding:40px 0 26px; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:26px; align-items:end; }
+  .eyebrow { margin:0 0 10px; color:var(--link); font-size:12px; font-weight:800; letter-spacing:1.4px; text-transform:uppercase; }
+  h1 { margin:0; font-size:clamp(32px,5vw,58px); line-height:1.02; letter-spacing:-1.6px; font-weight:850; }
+  .lede { margin:16px 0 0; max-width:64ch; color:var(--ink-2); font-size:16px; }
+  .lede b { color:var(--ink); }
+  .stamp { text-align:right; color:var(--ink-2); font-size:12px; line-height:1.7; }
+  .stamp b { display:block; color:var(--ink); font-size:13px; }
+
+  .stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:10px 0 24px; }
+  .stat { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:18px 18px 16px; }
+  .stat .k { display:block; font-size:clamp(26px,3.4vw,38px); font-weight:850; letter-spacing:-1.2px; line-height:1; font-variant-numeric:tabular-nums; }
+  .stat .l { display:block; margin-top:8px; color:var(--ink-2); font-size:12px; font-weight:700; letter-spacing:.3px; }
+  .stat .sub { display:block; margin-top:3px; color:var(--ink-3); font-size:11px; }
+  .stat.good .k { color:var(--ok); }
+  .stat.open .k { color:var(--danger); }
+
+  .toolbar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:0 0 18px; }
+  .search { flex:1 1 260px; min-width:220px; display:flex; align-items:center; gap:9px; background:var(--card); border:1px solid var(--border-control); border-radius:999px; padding:0 14px; }
+  .search input { flex:1; border:0; outline:0; background:transparent; padding:11px 0; min-width:0; }
+  .search svg { flex:none; color:var(--ink-3); }
+  .chips { display:flex; gap:6px; flex-wrap:wrap; }
+  .chip {
+    appearance:none; border:1px solid var(--border); background:var(--card); color:var(--ink-2);
+    border-radius:999px; padding:9px 13px; font-size:12px; font-weight:750; min-height:38px;
+    transition:background var(--motion), color var(--motion), border-color var(--motion);
+  }
+  .chip[aria-pressed="true"] { background:var(--soft); border-color:var(--action); color:var(--ink); }
+  .chip .n { font-variant-numeric:tabular-nums; opacity:.8; margin-left:5px; }
+  .ghost { appearance:none; border:1px solid var(--border); background:transparent; color:var(--ink-2); border-radius:999px; padding:9px 13px; min-height:38px; font-size:12px; font-weight:750; }
+
+  .layout { display:grid; grid-template-columns:minmax(0,1fr) 352px; gap:18px; align-items:start; }
+  .col { display:grid; gap:18px; min-width:0; }
+  .panel { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+  .panel-head { display:flex; align-items:center; gap:12px; padding:16px 18px; border-bottom:1px solid var(--border); }
+  .panel-head h2 { margin:0; font-size:14px; letter-spacing:.2px; }
+  .panel-head .count { margin-left:auto; color:var(--ink-3); font-size:12px; font-weight:750; font-variant-numeric:tabular-nums; }
+  .panel-body { padding:16px 18px; }
+  .rule { width:26px; height:2px; background:var(--action); border-radius:2px; flex:none; }
+
+  .group { border:1px solid var(--border); border-radius:11px; margin-bottom:10px; background:var(--sunken); overflow:hidden; }
+  .group:last-child { margin-bottom:0; }
+  .group summary {
+    list-style:none; display:flex; align-items:center; gap:12px; padding:13px 15px; cursor:pointer;
+    font-weight:750; font-size:13px;
+  }
+  .group summary::-webkit-details-marker { display:none; }
+  .group summary:hover { background:var(--raised); }
+  .group .gcount { margin-left:auto; color:var(--ink-3); font-size:12px; font-variant-numeric:tabular-nums; }
+  .group .caret { width:0; height:0; border-left:5px solid var(--ink-3); border-top:4px solid transparent; border-bottom:4px solid transparent; transition:transform var(--motion); flex:none; }
+  .group[open] .caret { transform:rotate(90deg); }
+  .checks { list-style:none; margin:0; padding:0 15px 13px; display:grid; gap:6px; }
+  .checks li { display:flex; gap:9px; align-items:flex-start; color:var(--ink-2); font-size:12.5px; line-height:1.45; }
+  .tick { color:var(--ok); font-weight:900; flex:none; width:14px; }
+  .checks code { font-family:var(--mono); font-size:11.5px; color:var(--ink); background:var(--code-bg); padding:1px 5px; border-radius:5px; }
+  .none { color:var(--ink-3); font-size:12.5px; padding:4px 2px 8px; }
+
+  .defect { border:1px solid var(--border); border-radius:11px; margin-bottom:10px; background:var(--sunken); overflow:hidden; }
+  .defect:last-child { margin-bottom:0; }
+  .defect.sim-fixed { border-color:var(--ok); }
+  .defect.sim-fixed .dtitle { text-decoration:line-through; color:var(--ink-3); }
+  .dhead { display:flex; align-items:flex-start; gap:10px; padding:13px 14px; }
+  .sev { flex:none; font-size:10px; font-weight:850; letter-spacing:.6px; padding:4px 7px; border-radius:5px; border:1px solid currentColor; margin-top:1px; }
+  .sev.p0 { color:var(--danger); }
+  .sev.p1 { color:var(--warn); }
+  .sev.p2 { color:var(--info); }
+  .did { font-family:var(--mono); font-size:11px; color:var(--ink-3); flex:none; margin-top:3px; }
+  .dmain { min-width:0; flex:1; }
+  .dcaret { width:0; height:0; border-left:5px solid var(--ink-3); border-top:4px solid transparent; border-bottom:4px solid transparent; margin-top:6px; transition:transform var(--motion); flex:none; }
+  .defect[open] .dcaret { transform:rotate(90deg); }
+  .dtitle { font-size:13px; font-weight:750; line-height:1.4; }
+  .dwhere { margin-top:3px; color:var(--ink-3); font-size:11.5px; font-family:var(--mono); }
+  .dmore { padding:0 14px 14px 14px; display:grid; gap:10px; }
+  .dgrid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .dcell { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:10px 11px; }
+  .dcell b { display:block; font-size:10px; text-transform:uppercase; letter-spacing:.7px; color:var(--ink-3); margin-bottom:4px; }
+  .dcell p { margin:0; font-size:12px; color:var(--ink-2); line-height:1.45; }
+  .fixbtn { justify-self:start; appearance:none; border:1px solid var(--border-control); background:var(--card); border-radius:8px; padding:7px 11px; font-size:11.5px; font-weight:750; color:var(--ink-2); min-height:34px; }
+  .fixbtn:hover { border-color:var(--action); color:var(--ink); }
+  .defect.sim-fixed .fixbtn { border-color:var(--ok); color:var(--ok); }
+
+  .rail .panel-body { display:grid; gap:16px; }
+  .cmd { background:var(--code-bg); border:1px solid var(--border); border-radius:9px; padding:10px 11px; font-family:var(--mono); font-size:11.5px; color:var(--ink-2); overflow-wrap:anywhere; }
+  .cmd + .cmd { margin-top:6px; }
+  .cmd b { color:var(--ink); }
+  .meta { display:flex; justify-content:space-between; gap:10px; font-size:12px; padding:7px 0; border-bottom:1px solid var(--hairline); }
+  .meta:last-child { border-bottom:0; }
+  .meta span { color:var(--ink-3); }
+  .meta b { font-variant-numeric:tabular-nums; }
+
+  .bars { display:grid; gap:9px; }
+  .bar { display:grid; grid-template-columns:52px 1fr 88px; gap:9px; align-items:center; font-size:11.5px; }
+  .bar .lab { color:var(--ink-2); font-weight:750; font-variant-numeric:tabular-nums; }
+  .track { height:8px; border-radius:4px; background:var(--sunken); border:1px solid var(--border); overflow:hidden; }
+  .fill { display:block; height:100%; background:var(--ink-2); border-radius:3px; }
+  .bar .tag { color:var(--ink-3); text-align:right; font-size:10.5px; }
+  .bar.legacy .fill { background:var(--info); }
+  .bar.neutral .fill { background:var(--warn); }
+  .bar.zero .fill { background:var(--ok); }
+
+  .cover { display:grid; gap:8px; }
+  .cover-row { display:flex; align-items:center; gap:9px; font-size:12px; color:var(--ink-2); }
+  .cover-dot { width:9px; height:9px; border-radius:50%; flex:none; }
+  .cover-dot.yes { background:var(--ok); }
+  .cover-dot.part { background:var(--warn); }
+  .cover-dot.no { background:var(--danger); }
+  .cover-row b { margin-left:auto; font-size:11px; color:var(--ink-3); font-weight:750; }
+
+  .done { list-style:none; margin:0; padding:0; display:grid; gap:9px; }
+  .done li { display:flex; gap:9px; font-size:12.5px; color:var(--ink-2); line-height:1.45; }
+  .done .box { width:15px; height:15px; border-radius:4px; border:1px solid var(--border-control); flex:none; margin-top:2px; }
+
+  .foot { margin-top:22px; padding-top:18px; border-top:1px solid var(--border); color:var(--ink-3); font-size:12px; display:flex; gap:14px; flex-wrap:wrap; justify-content:space-between; }
+  .foot b { color:var(--ink-2); }
+
+  .toast {
+    position:fixed; left:50%; bottom:24px; transform:translate(-50%,8px); opacity:0; pointer-events:none;
+    background:var(--card); border:1px solid var(--border-control); color:var(--ink);
+    padding:10px 15px; border-radius:999px; font-size:12px; font-weight:700; transition:opacity var(--motion), transform var(--motion); z-index:20;
+  }
+  .toast.on { opacity:1; transform:translate(-50%,0); }
+  .empty { padding:24px 10px; text-align:center; color:var(--ink-3); font-size:13px; }
+
+  @media (max-width:1080px) {
+    .layout { grid-template-columns:1fr; }
+    .rail { order:-1; }
+    .rail .panel-body { grid-template-columns:1fr 1fr; align-items:start; }
+  }
+  @media (max-width:760px) {
+    .wrap { padding:18px 14px 52px; }
+    header.hero { grid-template-columns:1fr; align-items:start; }
+    .stamp { text-align:left; }
+    .stats { grid-template-columns:1fr 1fr; }
+    .dgrid { grid-template-columns:1fr; }
+    .rail .panel-body { grid-template-columns:1fr; }
+    .bar { grid-template-columns:46px 1fr 74px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration:0ms !important; animation-duration:0ms !important; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to results</a>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">MA</div>
+      <div>
+        <b>MovieArena design process</b>
+        <span>Phase 12 · QA and regression</span>
+      </div>
+    </div>
+    <div class="seg" role="group" aria-label="Theme">
+      <button type="button" data-mode="system">System</button>
+      <button type="button" data-mode="dark" aria-pressed="true">Dark</button>
+      <button type="button" data-mode="light">Light</button>
+    </div>
+    <div class="status-pill"><span class="dot" aria-hidden="true"></span>Draft v0.1 — awaiting gate</div>
+  </div>
+
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Measured, not assumed</p>
+      <h1>QA and regression</h1>
+      <p class="lede">A re-runnable baseline across the classic site on <b>:8942</b>, the built React app on <b>:8943</b>, and the native source. <b>185 checks pass, 0 fail unexpectedly.</b> The 21 open defects are the real gap between the locked contracts and the shipped code — not test noise.</p>
+    </div>
+    <div class="stamp">
+      <b>Run 8 Nov 2026</b>
+      Probe · 185 checks<br>
+      Suites · 90 checks<br>
+      No browser automation<br>
+      No device run
+    </div>
+  </header>
+
+  <section class="stats" aria-label="Run summary">
+    <div class="stat good">
+      <span class="k" id="stat-checks">185/185</span>
+      <span class="l">Checks passed</span>
+      <span class="sub">0 unexpected failures</span>
+    </div>
+    <div class="stat open">
+      <span class="k" id="stat-open">21</span>
+      <span class="l">Open defects</span>
+      <span class="sub" id="stat-open-sub">10 P0 · 11 P1</span>
+    </div>
+    <div class="stat">
+      <span class="k">90</span>
+      <span class="l">Regression checks</span>
+      <span class="sub">Links · header · pages</span>
+    </div>
+    <div class="stat">
+      <span class="k">8</span>
+      <span class="l">Previews verified</span>
+      <span class="sub">HTTP 200 · balanced CSS</span>
+    </div>
+  </section>
+
+  <div class="toolbar" role="search">
+    <label class="search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <span class="sr-only" hidden>Filter checks and defects</span>
+      <input id="q" type="search" placeholder="Filter checks, defects, files, or acceptance tests" autocomplete="off" aria-label="Filter checks and defects">
+    </label>
+    <div class="chips" role="group" aria-label="Show">
+      <button class="chip" type="button" data-filter="all" aria-pressed="true">All <span class="n" id="n-all">206</span></button>
+      <button class="chip" type="button" data-filter="checks" aria-pressed="false">Checks <span class="n">185</span></button>
+      <button class="chip" type="button" data-filter="p0" aria-pressed="false">P0 <span class="n" id="n-p0">10</span></button>
+      <button class="chip" type="button" data-filter="p1" aria-pressed="false">P1 <span class="n" id="n-p1">11</span></button>
+      <button class="chip" type="button" data-filter="fixed" aria-pressed="false">Simulated fixed <span class="n" id="n-fixed">0</span></button>
+    </div>
+    <button class="ghost" type="button" id="reset">Reset</button>
+  </div>
+
+  <div class="layout">
+    <div class="col">
+      <section class="panel" aria-labelledby="checks-h">
+        <div class="panel-head">
+          <span class="rule" aria-hidden="true"></span>
+          <h2 id="checks-h">Executable checks</h2>
+          <span class="count" id="checks-count">185 shown</span>
+        </div>
+        <div class="panel-body" id="check-groups"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="defects-h">
+        <div class="panel-head">
+          <span class="rule" aria-hidden="true"></span>
+          <h2 id="defects-h">Defect register</h2>
+          <span class="count" id="defect-count">21 open</span>
+        </div>
+        <div class="panel-body" id="defects"></div>
+      </section>
+    </div>
+
+    <aside class="col rail" aria-label="Evidence">
+      <section class="panel">
+        <div class="panel-head"><span class="rule" aria-hidden="true"></span><h2>Evidence of record</h2></div>
+        <div class="panel-body">
+          <div>
+            <div class="cmd"><b>node</b> scripts/qa-phase12.js</div>
+            <div class="cmd"><b>node</b> /tmp/opencode/test-links.js</div>
+            <div class="cmd"><b>node</b> /tmp/opencode/test-header.js</div>
+            <div class="cmd"><b>node</b> /tmp/opencode/test-pages-smoke.js</div>
+          </div>
+          <div>
+            <div class="meta"><span>Classic server</span><b>:8942 · 200</b></div>
+            <div class="meta"><span>React server</span><b>:8943 · 200</b></div>
+            <div class="meta"><span>Catalog</span><b>1,210 shows</b></div>
+            <div class="meta"><span>Episodes</span><b>8,393</b></div>
+            <div class="meta"><span>YouTube ids</span><b>7,501</b></div>
+            <div class="meta"><span>Archive files</span><b>844</b></div>
+            <div class="meta"><span>Duplicate slugs</span><b>0</b></div>
+            <div class="meta"><span>ETag 304</span><b>pass</b></div>
+          </div>
+          <p style="margin:0;color:var(--ink-3);font-size:11.5px;line-height:1.5">Read-only except the React build, which rewrites <code style="font-family:var(--mono);font-size:11px">apps/web/dist</code>. No dependencies installed. No browser used.</p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><span class="rule" aria-hidden="true"></span><h2>Preview effect inventory</h2></div>
+        <div class="panel-body">
+          <div class="bars" id="bars" aria-label="Effects per preview"></div>
+          <p style="margin:0;color:var(--ink-3);font-size:11.5px;line-height:1.5">Phase 4 is a pre-amendment archive: gradients and text shadows belong to rejected Directions A/B. Phases 5–10 use neutral elevation only. Phase 11 is the strict reference at zero.</p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><span class="rule" aria-hidden="true"></span><h2>Coverage map</h2></div>
+        <div class="panel-body">
+          <div class="cover">
+            <div class="cover-row"><span class="cover-dot yes"></span>Routing and assets<b>Measured</b></div>
+            <div class="cover-row"><span class="cover-dot yes"></span>Catalog integrity<b>Measured</b></div>
+            <div class="cover-row"><span class="cover-dot yes"></span>Relay and guards<b>Measured</b></div>
+            <div class="cover-row"><span class="cover-dot yes"></span>React build parity<b>Measured</b></div>
+            <div class="cover-row"><span class="cover-dot part"></span>Player automation<b>Not covered</b></div>
+            <div class="cover-row"><span class="cover-dot part"></span>Screen readers<b>Not covered</b></div>
+            <div class="cover-row"><span class="cover-dot part"></span>Native runtime<b>Not covered</b></div>
+            <div class="cover-row"><span class="cover-dot no"></span>Performance trace<b>Phase 13</b></div>
+            <div class="cover-row"><span class="cover-dot no"></span>Visual diff<b>Post-build</b></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><span class="rule" aria-hidden="true"></span><h2>Exit criteria</h2></div>
+        <div class="panel-body">
+          <ul class="done">
+            <li><span class="box" aria-hidden="true"></span>0 unexpected probe failures</li>
+            <li><span class="box" aria-hidden="true"></span>Every P0 resolved or dated-deferred</li>
+            <li><span class="box" aria-hidden="true"></span>Three regression suites pass unchanged</li>
+            <li><span class="box" aria-hidden="true"></span>React build serves at origin root</li>
+            <li><span class="box" aria-hidden="true"></span>No new effect enters product CSS</li>
+            <li><span class="box" aria-hidden="true"></span>Copy changes keep the claims probe honest</li>
+          </ul>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <div class="foot">
+    <span><b>Preview only.</b> A QA decision aid, not the product. No catalog imagery.</span>
+    <span>Full evidence: <b>docs/design/phase-12-qa-regression.md</b></span>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+  "use strict";
+
+  const DEFECTS = [
+    { id:"QA-01a", sev:"P0", where:"style.css", title:"Radial-gradient washes, text-shadows, and coloured shadows still ship", evidence:"Production CSS still carries the pre-amendment decoration. The user-facing no-glow rule is not yet true.", fix:"Remove ambient washes, text shadows, coloured focus glow, and coloured hover shadows. Keep neutral elevation only where Phase 6 allows it.", accept:"Probe check “product CSS ships glow” flips to resolved." },
+    { id:"QA-01b", sev:"P1", where:"style.css", title:"Cards still lift on hover with translateY", evidence:"Locked Phase 8 forbids lift, zoom, and parallax. Hover still moves the card.", fix:"Remove the transform. Hover changes border and title only.", accept:"Probe check “product CSS lifts cards” flips to resolved." },
+    { id:"QA-02", sev:"P0", where:"legal.html", title:"“No user database and no analytics” is an open-ended promise", evidence:"True today, but unsafe as a permanent claim once accounts and consented telemetry exist.", fix:"Replace with a dated current-state statement and a launch addendum.", accept:"Phrase absent; dated statement present." },
+    { id:"QA-03", sev:"P0", where:"legal.html", title:"“Every stream is delivered by YouTube” is false for Archive films", evidence:"The same page describes direct MP4 delivery through the relay.", fix:"Split the YouTube and direct-file delivery paths.", accept:"Phrase absent; both paths described." },
+    { id:"QA-04", sev:"P1", where:"legal.html", title:"“No streams proxied” does not qualify the Archive relay", evidence:"Narrowly true for licensed video, but it reads as a blanket claim.", fix:"Say no licensed video is proxied; explain the public-domain relay.", accept:"Phrase absent; relay disclosed." },
+    { id:"QA-05", sev:"P1", where:"about.html", title:"“No re-hosting, no proxies” is unqualified", evidence:"Public-domain files stream through the Archive relay.", fix:"“No re-hosting of licensed video; public-domain files use our relay.”", accept:"Phrase absent." },
+    { id:"QA-06", sev:"P0", where:"watch.html", title:"The Invidious proxy control is still shipped", evidence:"A “Proxy: Off” button exposes community-instance playback.", fix:"Remove the control.", accept:"#btn-proxy absent." },
+    { id:"QA-07", sev:"P0", where:"watch.js", title:"The Invidious playback branch remains, labelled “ToS-gray”", evidence:"The code itself names the legal risk and still runs.", fix:"Remove the branch and the instance list.", accept:"No PROXY_INSTANCES; no “ToS-gray”." },
+    { id:"QA-08", sev:"P1", where:"home.js", title:"Classic hero says “Trending №1”", evidence:"Implies a measured rank with no stated basis.", fix:"“Featured” until a ranking metric is defined.", accept:"Phrase absent." },
+    { id:"QA-09", sev:"P1", where:"apps/web/src/App.jsx", title:"React hero repeats “Trending №1”", evidence:"Same unsupported rank claim.", fix:"“Featured”.", accept:"Phrase absent." },
+    { id:"QA-10", sev:"P1", where:"apps/mobile/src/screens/HomeScreen.jsx", title:"Native hero repeats “TRENDING №1”", evidence:"Same claim on the third surface.", fix:"“Featured”.", accept:"Phrase absent." },
+    { id:"QA-11", sev:"P0", where:"apps/mobile/src/screens/MoreScreen.jsx", title:"“No accounts, no ads, no analytics” — “no ads” is already false", evidence:"Official embeds can carry their own ads.", fix:"“No accounts today. Official embeds may include their own ads.”", accept:"Phrase absent." },
+    { id:"QA-12", sev:"P1", where:"watch.js", title:"Player badge is hard-coded “FREE · Official” for every source", evidence:"Wrong on Archive films, which are public domain, not official channel uploads.", fix:"Source-aware: “Free · Official” or “Free · Public domain”.", accept:"Badge derives from source." },
+    { id:"QA-13", sev:"P1", where:"subs.js", title:"YouTube captions are fetched through third-party Invidious hosts", evidence:"An undisclosed intermediary sits between the user and the caption text.", fix:"Prefer the official endpoint; otherwise disclose text-only retrieval.", accept:"No Invidious host; disclosure present." },
+    { id:"QA-14", sev:"P0", where:"apps/mobile/src/screens/WatchScreen.jsx", title:"A killCaptions loop suppresses captions every 2.5 seconds", evidence:"Captions are removed on play, quality change, rate change, and a timer.", fix:"Remove the loop. Add a Subtitles control; captions default off.", accept:"No killCaptions." },
+    { id:"QA-15", sev:"P0", where:"apps/mobile/app.json", title:"Native is forced into dark mode", evidence:"userInterfaceStyle is “dark”; there is no semantic theme object.", fix:"System/dark/light with a semantic theme object.", accept:"Config no longer forces dark." },
+    { id:"QA-16", sev:"P1", where:"apps/mobile/app.json", title:"No deep-link scheme", evidence:"Watch and account routes cannot be opened from outside the app.", fix:"Add the moviearena scheme and route map.", accept:"Scheme present." },
+    { id:"QA-17", sev:"P0", where:"apps/mobile/App.jsx", title:"Four glyph tabs; Browse is missing", evidence:"Locked Phase 3 and Phase 11 require five labelled tabs with roles and selected state.", fix:"Home · Browse · Search · My List · More, 56pt plus inset.", accept:"Five tabs; Browse present." },
+    { id:"QA-18", sev:"P0", where:"WatchScreen.jsx", title:"The WebView autoplays with sound", evidence:"Opening a title starts playback before a user gesture.", fix:"Open paused; Play is the gesture; Resume only from a resume action.", accept:"No autoplay on entry." },
+    { id:"QA-19", sev:"P1", where:"WatchScreen.jsx", title:"hls.js is loaded from jsdelivr", evidence:"Remote code is a supply-chain and offline risk.", fix:"Use the native media engine or bundle the dependency.", accept:"No CDN script." },
+    { id:"QA-20", sev:"P1", where:"WatchScreen.jsx", title:"originWhitelist is [\"*\"]", evidence:"The WebView accepts every origin.", fix:"Restrict the origin allowlist.", accept:"No wildcard." }
+  ];
+  const GROUPS = [
+    { id: "classic", label: "Classic pages, assets, duplicate IDs", checks: ["classic page 200 /", "classic page html /", "classic nosniff /", "classic page 200 /index.html", "classic page html /index.html", "classic nosniff /index.html", "classic page 200 /watch.html", "classic page html /watch.html", "classic nosniff /watch.html", "classic page 200 /list.html", "classic page html /list.html", "classic nosniff /list.html", "classic page 200 /about.html", "classic page html /about.html", "classic nosniff /about.html", "classic page 200 /legal.html", "classic page html /legal.html", "classic nosniff /legal.html", "classic asset 200 /style.css", "classic asset 200 /shows-data.js", "classic asset 200 /catalog-meta.js", "classic asset 200 /icons.js", "classic asset 200 /common.js", "classic asset 200 /home.js", "classic asset 200 /custom-links.js", "classic asset 200 /links.js", "classic asset 200 /moviemind.js", "classic no duplicate ids /", "classic asset 200 /style.css", "classic asset 200 /shows-data.js", "classic asset 200 /catalog-meta.js", "classic asset 200 /icons.js", "classic asset 200 /common.js", "classic asset 200 /home.js", "classic asset 200 /custom-links.js", "classic asset 200 /links.js", "classic asset 200 /moviemind.js", "classic no duplicate ids /index.html", "classic asset 200 /style.css", "classic asset 200 /shows-data.js", "classic asset 200 /catalog-meta.js", "classic asset 200 /icons.js", "classic asset 200 /common.js", "classic asset 200 /player.js", "classic asset 200 /watch.js", "classic asset 200 /custom-links.js", "classic asset 200 /links.js", "classic asset 200 /moviemind.js", "classic no duplicate ids /watch.html", "classic asset 200 /style.css", "classic asset 200 /shows-data.js", "classic asset 200 /catalog-meta.js", "classic asset 200 /icons.js", "classic asset 200 /common.js", "classic asset 200 /home.js", "classic asset 200 /custom-links.js", "classic asset 200 /links.js", "classic asset 200 /moviemind.js", "classic no duplicate ids /list.html", "classic asset 200 /style.css", "classic asset 200 /shows-data.js", "classic asset 200 /catalog-meta.js", "classic asset 200 /icons.js", "classic asset 200 /common.js", "classic no duplicate ids /about.html", "classic asset 200 /style.css", "classic asset 200 /shows-data.js", "classic asset 200 /catalog-meta.js", "classic asset 200 /icons.js", "classic asset 200 /common.js", "classic no duplicate ids /legal.html"] },
+    { id: "react", label: "React build at origin root", checks: ["react page 200 /", "react page html /", "react page 200 /index.html", "react page html /index.html", "react page 200 /watch/demo-slug", "react page html /watch/demo-slug", "react asset 200 /main.css", "react asset 200 /style.css", "react asset 200 /player.js", "react asset 200 /icons.js", "react asset 200 /custom-links.js", "react asset 200 /links.js", "react asset 200 /moviemind.js", "react asset 200 /main.js", "react index has #root", "react index loads main.js", "react bundle is non-empty"] },
+    { id: "catalog", label: "Catalog API and integrity", checks: ["health 200", "health ok true", "health shows > 0", "health episodes > 0", "catalog 200", "catalog json", "catalog is array", "no duplicate slugs", "every show has a title", "every show has langs", "every show has episodes", "episode numbers numeric", "no duplicate lang/ep keys", "every episode has an id", "no plain-http ids", "no Invidious URLs in catalog", "Archive ids use archive.org hosts", "direct-file ids use allowlisted hosts", "episode count matches health", "YouTube ids present", "Archive ids present", "no malformed URLs", "langs always carry eps arrays", "catalog has ETag", "catalog conditional 304", "/api/shows 200", "/api/shows matches catalog count", "/api/catalog/status 200"] },
+    { id: "guards", label: "Relay, traversal, method guards", checks: ["relay rejects missing url", "relay rejects unlisted host", "refresh rejects GET", "guard /../etc/passwd not 200", "guard /%2e%2e/%2e%2e/etc/passwd not 200", "guard /docs/design/phase-11-native-parity.md not 200", "guard /no-such-page-qa not 200", "HEAD health empty body"] },
+    { id: "cache", label: "Cache policy and asset versions", checks: ["one version for style.css", "one version for icons.js", "one version for common.js", "one version for home.js", "one version for custom-links.js", "one version for links.js", "one version for player.js", "one version for watch.js", "classic HTML revalidates", "react HTML revalidates"] },
+    { id: "contract", label: "JustWatch check and mobile screen files", checks: ["no live JustWatch redirects", "mobile screen exists HomeScreen", "mobile screen exists SearchScreen", "mobile screen exists ListScreen", "mobile screen exists MoreScreen", "mobile screen exists WatchScreen"] },
+    { id: "preview", label: "Design preview integrity", checks: ["preview 4 CSS braces balanced", "preview 4 one inline script pair", "preview 4 HTTP 200", "preview 5 CSS braces balanced", "preview 5 one inline script pair", "preview 5 HTTP 200", "preview 5 has no text-shadow", "preview 5 has no radial-gradient", "preview 6 CSS braces balanced", "preview 6 one inline script pair", "preview 6 HTTP 200", "preview 6 has no text-shadow", "preview 6 has no radial-gradient", "preview 7 CSS braces balanced", "preview 7 one inline script pair", "preview 7 HTTP 200", "preview 7 has no text-shadow", "preview 7 has no radial-gradient", "preview 8 CSS braces balanced", "preview 8 one inline script pair", "preview 8 HTTP 200", "preview 8 has no text-shadow", "preview 8 has no radial-gradient", "preview 9 CSS braces balanced", "preview 9 one inline script pair", "preview 9 HTTP 200", "preview 9 has no text-shadow", "preview 9 has no radial-gradient", "preview 10 CSS braces balanced", "preview 10 one inline script pair", "preview 10 HTTP 200", "preview 10 has no text-shadow", "preview 10 has no radial-gradient", "preview 11 CSS braces balanced", "preview 11 one inline script pair", "preview 11 HTTP 200", "preview 11 has no text-shadow", "preview 11 has no radial-gradient", "preview 11 is fully effect-free"] },
+    { id: "regression", label: "Regression suites, build, server parity", checks: ["react server health ok", "react and classic report the same catalog size", "regression suite test-links.js", "regression suite test-header.js", "regression suite test-pages-smoke.js", "React production build"] }
+  ];
+
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+  const state = { q: "", filter: "all", fixed: new Set() };
+
+  /* ---------- theme ---------- */
+  const modeButtons = $$("[data-mode]");
+  const mq = window.matchMedia("(prefers-color-scheme: light)");
+  function readMode() {
+    try { return localStorage.getItem("ma.phase12.mode") || "system"; } catch (_) { return "system"; }
+  }
+  function applyMode(mode) {
+    const resolved = mode === "system" ? (mq.matches ? "light" : "dark") : mode;
+    document.documentElement.dataset.theme = resolved;
+    modeButtons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === mode)));
+  }
+  modeButtons.forEach((b) => b.addEventListener("click", () => {
+    try { localStorage.setItem("ma.phase12.mode", b.dataset.mode); } catch (_) {}
+    applyMode(b.dataset.mode);
+    toast(b.dataset.mode === "system" ? "Following the system theme." : b.dataset.mode + " theme.");
+  }));
+  if (mq.addEventListener) mq.addEventListener("change", () => { if (readMode() === "system") applyMode("system"); });
+
+  /* ---------- toast ---------- */
+  let toastTimer = 0;
+  function toast(text) {
+    const el = $("#toast");
+    el.textContent = text;
+    el.classList.add("on");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove("on"), 2200);
+  }
+
+  /* ---------- checks ---------- */
+  const groupsEl = $("#check-groups");
+  GROUPS.forEach((g, gi) => {
+    const d = document.createElement("details");
+    d.className = "group";
+    d.dataset.group = g.id;
+    if (gi < 2) d.open = true;
+
+    const s = document.createElement("summary");
+    const caret = document.createElement("span");
+    caret.className = "caret";
+    caret.setAttribute("aria-hidden", "true");
+    const label = document.createElement("span");
+    label.textContent = g.label;
+    const count = document.createElement("span");
+    count.className = "gcount";
+    count.textContent = g.checks.length + " checks";
+    s.append(caret, label, count);
+
+    const ul = document.createElement("ul");
+    ul.className = "checks";
+    g.checks.forEach((name) => {
+      const li = document.createElement("li");
+      li.dataset.name = name;
+      const tick = document.createElement("span");
+      tick.className = "tick";
+      tick.textContent = "✓";
+      tick.setAttribute("aria-hidden", "true");
+      const text = document.createElement("span");
+      text.textContent = name;
+      li.append(tick, text);
+      ul.append(li);
+    });
+    d.append(s, ul);
+    groupsEl.append(d);
+  });
+  const noChecks = document.createElement("p");
+  noChecks.className = "empty";
+  noChecks.id = "no-checks";
+  noChecks.textContent = "No checks match that filter.";
+  groupsEl.append(noChecks);
+
+  /* ---------- defects ---------- */
+  const defectEl = $("#defects");
+  DEFECTS.forEach((d) => {
+    const card = document.createElement("details");
+    card.className = "defect";
+    card.dataset.sev = d.sev;
+    card.dataset.id = d.id;
+
+    const sum = document.createElement("summary");
+    sum.className = "dhead";
+    const sev = document.createElement("span");
+    sev.className = "sev " + d.sev.toLowerCase();
+    sev.textContent = d.sev;
+    const id = document.createElement("span");
+    id.className = "did";
+    id.textContent = d.id;
+    const main = document.createElement("span");
+    main.className = "dmain";
+    const title = document.createElement("span");
+    title.className = "dtitle";
+    title.textContent = d.title;
+    const where = document.createElement("span");
+    where.className = "dwhere";
+    where.textContent = d.where;
+    main.append(title, where);
+    const dcaret = document.createElement("span");
+    dcaret.className = "dcaret";
+    dcaret.setAttribute("aria-hidden", "true");
+    sum.append(sev, id, main, dcaret);
+
+    const more = document.createElement("div");
+    more.className = "dmore";
+    const grid = document.createElement("div");
+    grid.className = "dgrid";
+    [["Evidence", d.evidence], ["Required fix", d.fix], ["Acceptance test", d.accept]].forEach(([k, v], i) => {
+      const cell = document.createElement("div");
+      cell.className = "dcell";
+      if (i === 2) cell.style.gridColumn = "1 / -1";
+      const b = document.createElement("b");
+      b.textContent = k;
+      const p = document.createElement("p");
+      p.textContent = v;
+      cell.append(b, p);
+      grid.append(cell);
+    });
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "fixbtn";
+    btn.textContent = "Mark fixed (simulation)";
+    btn.addEventListener("click", () => {
+      if (state.fixed.has(d.id)) {
+        state.fixed.delete(d.id);
+        card.classList.remove("sim-fixed");
+        btn.textContent = "Mark fixed (simulation)";
+        toast(d.id + " reopened.");
+      } else {
+        state.fixed.add(d.id);
+        card.classList.add("sim-fixed");
+        btn.textContent = "Reopen";
+        toast(d.id + " marked fixed — simulation only.");
+      }
+      render();
+    });
+    more.append(grid, btn);
+    card.append(sum, more);
+    defectEl.append(card);
+  });
+  const noDefects = document.createElement("p");
+  noDefects.className = "empty";
+  noDefects.id = "no-defects";
+  noDefects.textContent = "No defects match that filter.";
+  defectEl.append(noDefects);
+
+  /* ---------- bars ---------- */
+  const BARS = [
+    { p: 4, pct: 100, kind: "legacy", tag: "legacy · archive", text: "3 gradients, 2 text shadows, 10 shadows" },
+    { p: 5, pct: 27, kind: "neutral", tag: "neutral", text: "4 neutral shadows" },
+    { p: 6, pct: 47, kind: "neutral", tag: "neutral", text: "7 neutral shadows" },
+    { p: 7, pct: 13, kind: "neutral", tag: "neutral", text: "2 inset rules" },
+    { p: 8, pct: 7, kind: "neutral", tag: "neutral", text: "1 sheet shadow" },
+    { p: 9, pct: 20, kind: "neutral", tag: "neutral", text: "3 dialog shadows" },
+    { p: 10, pct: 7, kind: "neutral", tag: "neutral", text: "1 dialog shadow" },
+    { p: 11, pct: 0, kind: "zero", tag: "reference", text: "0 effects" }
+  ];
+  const barsEl = $("#bars");
+  BARS.forEach((b) => {
+    const row = document.createElement("div");
+    row.className = "bar " + b.kind;
+    const lab = document.createElement("span");
+    lab.className = "lab";
+    lab.textContent = "P" + b.p;
+    const track = document.createElement("span");
+    track.className = "track";
+    const fill = document.createElement("span");
+    fill.className = "fill";
+    fill.style.width = b.pct + "%";
+    track.append(fill);
+    const tag = document.createElement("span");
+    tag.className = "tag";
+    tag.textContent = b.tag;
+    row.append(lab, track, tag);
+    row.title = "Phase " + b.p + ": " + b.text;
+    barsEl.append(row);
+  });
+
+  /* ---------- filtering ---------- */
+  const chips = $$("[data-filter]");
+  const checksPanel = $("#checks-h").closest(".panel");
+  const defectsPanel = $("#defects-h").closest(".panel");
+
+  function matches(text) {
+    return !state.q || text.toLowerCase().includes(state.q.toLowerCase());
+  }
+
+  function render() {
+    const showChecks = state.filter === "all" || state.filter === "checks";
+    const showDefects = state.filter === "all" || state.filter === "p0" || state.filter === "p1" || state.filter === "fixed";
+    checksPanel.hidden = !showChecks;
+    defectsPanel.hidden = !showDefects;
+
+    let shownChecks = 0;
+    $$(".group").forEach((group) => {
+      let visible = 0;
+      Array.from(group.querySelectorAll("li")).forEach((li) => {
+        const ok = showChecks && matches(li.dataset.name);
+        li.hidden = !ok;
+        if (ok) visible++;
+      });
+      group.hidden = !showChecks || visible === 0;
+      if (state.q && visible > 0) group.open = true;
+      group.querySelector(".gcount").textContent = visible + " shown";
+      shownChecks += visible;
+    });
+    noChecks.hidden = !(showChecks && shownChecks === 0);
+
+    let shownDefects = 0;
+    Array.from(defectEl.querySelectorAll(".defect")).forEach((card) => {
+      const id = card.dataset.id;
+      const sev = card.dataset.sev;
+      const isFixed = state.fixed.has(id);
+      let ok = showDefects && matches(card.textContent);
+      if (state.filter === "p0") ok = ok && sev === "P0" && !isFixed;
+      if (state.filter === "p1") ok = ok && sev === "P1" && !isFixed;
+      if (state.filter === "fixed") ok = ok && isFixed;
+      card.hidden = !ok;
+      if (ok) shownDefects++;
+    });
+    noDefects.hidden = !(showDefects && shownDefects === 0);
+
+    $("#checks-count").textContent = shownChecks + " shown";
+    $("#defect-count").textContent = (DEFECTS.length - state.fixed.size) + " open";
+    $("#n-fixed").textContent = state.fixed.size;
+
+    const p0 = DEFECTS.filter((d) => d.sev === "P0" && !state.fixed.has(d.id)).length;
+    const p1 = DEFECTS.filter((d) => d.sev === "P1" && !state.fixed.has(d.id)).length;
+    $("#stat-open").textContent = String(p0 + p1);
+    $("#stat-open-sub").textContent = p0 + " P0 · " + p1 + " P1";
+    $("#n-p0").textContent = String(p0);
+    $("#n-p1").textContent = String(p1);
+  }
+
+  chips.forEach((b) => b.addEventListener("click", () => {
+    state.filter = b.dataset.filter;
+    chips.forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    render();
+  }));
+
+  $("#q").addEventListener("input", (e) => {
+    state.q = e.target.value.trim();
+    render();
+  });
+
+  $("#reset").addEventListener("click", () => {
+    state.q = "";
+    state.filter = "all";
+    state.fixed.clear();
+    $("#q").value = "";
+    chips.forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.filter === "all")));
+    Array.from(defectEl.querySelectorAll(".defect")).forEach((card) => {
+      card.classList.remove("sim-fixed");
+      card.querySelector(".fixbtn").textContent = "Mark fixed (simulation)";
+    });
+    render();
+    toast("Filters and simulation reset.");
+  });
+
+  applyMode(readMode());
+  render();
+</script>
+</body>
+</html>

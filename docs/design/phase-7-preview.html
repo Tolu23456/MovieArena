@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase 7 — MovieArena page layouts</title>
+<style>
+  :root {
+    --ma-neutral-0:#ffffff; --ma-neutral-50:#f6f7f9; --ma-neutral-75:#f2f4f7;
+    --ma-neutral-100:#eef1f5; --ma-neutral-150:#e1e5ec; --ma-neutral-200:#c6cdd9;
+    --ma-neutral-300:#9aa3b2; --ma-neutral-400:#828d9d; --ma-neutral-500:#6f7a8c;
+    --ma-neutral-600:#646e7c; --ma-neutral-700:#5c6472; --ma-neutral-850:#282e38;
+    --ma-neutral-900:#1b2029; --ma-neutral-925:#161a21; --ma-neutral-950:#12151b;
+    --ma-neutral-1000:#0c0e12;
+    --ma-accent-400:#ff7a62; --ma-accent-500:#ff5c47; --ma-accent-600:#e84632;
+    --ma-accent-700:#c0341f; --ma-warm-300:#ffb066; --ma-warm-400:#ff8a3d;
+    --ma-success-300:#8fcfa5; --ma-warning-300:#e8c37a; --ma-danger-300:#ff9a8f;
+  }
+  :root, [data-theme="dark"] {
+    color-scheme: dark;
+    --surface-page:var(--ma-neutral-1000); --surface-sunken:var(--ma-neutral-950);
+    --surface-card:var(--ma-neutral-925); --surface-raised:var(--ma-neutral-900);
+    --border-subtle:var(--ma-neutral-850); --border-control:var(--ma-neutral-600);
+    --border-emphasis:var(--ma-neutral-500);
+    --content-primary:var(--ma-neutral-100); --content-secondary:var(--ma-neutral-300);
+    --content-tertiary:var(--ma-neutral-400);
+    --action:var(--ma-accent-500); --action-hover:var(--ma-accent-400);
+    --action-ink:var(--ma-neutral-1000); --action-soft:rgba(255,92,71,.16);
+    --focus:var(--ma-warm-400); --link:var(--ma-warm-400);
+    --success:var(--ma-success-300); --warning:var(--ma-warning-300); --danger:var(--ma-danger-300);
+    --media-bg:#000; --media-chrome:#fff; --media-muted:#b8bec9;
+    --media-track:rgba(255,255,255,.22); --media-fill:var(--ma-accent-500);
+    --media-border:rgba(255,255,255,.28); --media-bg-ctl:rgba(12,14,18,.62);
+  }
+  [data-theme="light"] {
+    color-scheme: light;
+    --surface-page:var(--ma-neutral-50); --surface-sunken:var(--ma-neutral-100);
+    --surface-card:var(--ma-neutral-0); --surface-raised:var(--ma-neutral-75);
+    --border-subtle:var(--ma-neutral-150); --border-control:var(--ma-neutral-500);
+    --border-emphasis:var(--ma-neutral-600);
+    --content-primary:var(--ma-neutral-950); --content-secondary:var(--ma-neutral-700);
+    --content-tertiary:var(--ma-neutral-600);
+    --action:var(--ma-accent-500); --action-hover:var(--ma-accent-600);
+    --action-ink:var(--ma-neutral-950); --action-soft:rgba(255,92,71,.12);
+    --focus:var(--ma-accent-700); --link:var(--ma-accent-700);
+    --success:#2f6b3a; --warning:#8a5a12; --danger:#b3261e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family:"Inter","Segoe UI",system-ui,-apple-system,sans-serif;
+    background:var(--surface-page); color:var(--content-primary); line-height:1.5;
+    transition:background-color .16s ease,color .16s ease;
+  }
+  html.switching, html.switching * { transition:background-color .15s ease,border-color .15s ease,color .15s ease !important; }
+  :focus-visible { outline:2px solid var(--focus); outline-offset:2px; border-radius:4px; }
+  button { font: inherit; }
+  h1,h2,h3,p { margin:0; }
+
+  .bar {
+    position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    padding:10px 18px; background:var(--surface-page); border-bottom:1px solid var(--border-subtle);
+  }
+  .brand { display:flex; align-items:baseline; gap:10px; margin-right:auto; }
+  .brand strong { font-size:.92rem; letter-spacing:-.01em; }
+  .brand span { color:var(--content-secondary); font-size:.64rem; letter-spacing:.08em; text-transform:uppercase; }
+  .locked { color:var(--content-secondary); font-size:.62rem; font-weight:650; border:1px solid var(--border-subtle); border-radius:999px; padding:4px 8px; }
+  .seg { display:inline-flex; padding:3px; gap:2px; background:var(--surface-sunken); border:1px solid var(--border-subtle); border-radius:9px; }
+  .seg button { appearance:none; border:0; background:transparent; color:var(--content-secondary); font-size:.7rem; font-weight:650; padding:6px 10px; border-radius:6px; cursor:pointer; }
+  .seg button:hover { color:var(--content-primary); background:var(--surface-raised); }
+  .seg button.on { background:var(--action); color:var(--action-ink); }
+  .resolved { color:var(--content-secondary); font-size:.64rem; min-width:74px; font-variant-numeric:tabular-nums; }
+
+  .atlas { max-width:1240px; margin:0 auto; padding:24px 18px 70px; }
+  .intro { max-width:760px; margin-bottom:20px; }
+  .eyebrow { color:var(--link); font-size:.63rem; font-weight:750; letter-spacing:.14em; text-transform:uppercase; }
+  h1 { font-size:clamp(1.7rem,3.6vw,2.5rem); line-height:1.06; letter-spacing:-.03em; font-weight:650; margin:8px 0 8px; }
+  .intro p { color:var(--content-secondary); font-size:.86rem; max-width:64ch; }
+
+  .controls { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+  .pages { display:flex; gap:4px; flex-wrap:wrap; }
+  .pages button {
+    appearance:none; border:1px solid var(--border-subtle); background:transparent; color:var(--content-secondary);
+    font-size:.68rem; font-weight:650; padding:6px 10px; border-radius:7px; cursor:pointer;
+  }
+  .pages button:hover { color:var(--content-primary); border-color:var(--border-emphasis); }
+  .pages button.on { background:var(--action-soft); border-color:var(--action); color:var(--content-primary); }
+  .spec {
+    display:flex; gap:8px; align-items:flex-start; margin-bottom:14px;
+    border:1px solid var(--border-subtle); border-left:3px solid var(--link);
+    background:var(--surface-sunken); border-radius:8px; padding:9px 11px;
+    color:var(--content-secondary); font-size:.66rem; line-height:1.55;
+  }
+  .spec b { color:var(--content-primary); }
+
+  /* ---------------- FRAME ---------------- */
+  .frame {
+    border:1px solid var(--border-control); border-radius:12px; overflow:hidden;
+    background:var(--surface-page); width:100%; transition:max-width .16s ease;
+  }
+  .frame.mobile { max-width:420px; margin:0 auto; border-radius:20px; }
+  .mock-header {
+    display:flex; align-items:center; gap:10px; padding:0 14px;
+    height:58px; border-bottom:1px solid var(--border-subtle); background:var(--surface-page);
+  }
+  .frame.mobile .mock-header { height:52px; }
+  .mock-brand { font-size:.82rem; font-weight:750; letter-spacing:-.02em; margin-right:auto; }
+  .mock-search {
+    flex:0 1 360px; height:32px; border:1px solid var(--border-control); border-radius:7px;
+    background:var(--surface-card); display:flex; align-items:center; gap:6px; padding:0 9px;
+    color:var(--content-tertiary); font-size:.62rem;
+  }
+  .mock-search svg { width:13px; height:13px; }
+  .mock-avatar { width:26px; height:26px; border-radius:50%; background:var(--action-soft); border:1px solid var(--border-control); display:grid; place-items:center; font-size:.58rem; font-weight:800; color:var(--content-primary); }
+  .frame.mobile .mock-search { display:none; }
+  .mock-body { display:grid; grid-template-columns:178px minmax(0,1fr); min-height:540px; }
+  .frame.mobile .mock-body { grid-template-columns:1fr; min-height:500px; }
+  .mock-sidebar { border-right:1px solid var(--border-subtle); padding:12px 8px; background:var(--surface-page); }
+  .frame.mobile .mock-sidebar { display:none; }
+  .mock-nav { display:flex; flex-direction:column; gap:2px; }
+  .mock-nav span { display:flex; align-items:center; gap:7px; height:30px; padding:0 8px; border-radius:5px; color:var(--content-secondary); font-size:.64rem; font-weight:600; }
+  .mock-nav span.on { background:var(--action-soft); color:var(--content-primary); box-shadow:inset 2px 0 0 var(--action); font-weight:700; }
+  .mock-nav i { width:11px; height:11px; border:1px solid currentColor; border-radius:2px; opacity:.7; }
+  .mock-main { padding:16px; min-width:0; }
+  .frame.mobile .mock-main { padding:12px; }
+  .mock-tabbar {
+    display:none; grid-template-columns:repeat(5,1fr); gap:2px; padding:4px;
+    border-top:1px solid var(--border-subtle); background:var(--surface-card);
+  }
+  .frame.mobile .mock-tabbar { display:grid; }
+  .mock-tabbar span { display:flex; flex-direction:column; align-items:center; gap:2px; font-size:.5rem; font-weight:700; color:var(--content-secondary); padding:5px 0; border-radius:5px; }
+  .mock-tabbar span.on { color:var(--content-primary); background:var(--action-soft); box-shadow:inset 0 2px 0 var(--action); }
+  .mock-tabbar i { width:14px; height:14px; border:1px solid currentColor; border-radius:3px; opacity:.75; }
+
+  /* ---------------- PAGE SCAFFOLD ---------------- */
+  .page { display:none; }
+  .page.on { display:block; }
+  .page-head { display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+  .page-head h2 { font-size:1.05rem; font-weight:650; letter-spacing:-.01em; }
+  .page-head .sub { color:var(--content-secondary); font-size:.62rem; margin-left:auto; }
+  .ph { border:1px solid var(--border-subtle); border-radius:7px; background:var(--surface-sunken); }
+  .label { display:flex; align-items:center; justify-content:center; color:var(--content-secondary); font-size:.58rem; font-weight:650; letter-spacing:.04em; text-align:center; padding:6px; }
+
+  .hero {
+    display:grid; grid-template-columns:1.05fr .95fr; gap:14px; min-height:210px;
+    border:1px solid var(--border-subtle); border-radius:10px; overflow:hidden; background:var(--surface-card);
+  }
+  .frame.mobile .hero { grid-template-columns:1fr; min-height:0; }
+  .hero-art { min-height:210px; background:linear-gradient(140deg,#2a2119,#1b2029 46%,#0c0e12); }
+  .frame.mobile .hero-art { min-height:150px; }
+  .hero-copy { padding:16px; display:flex; flex-direction:column; justify-content:center; gap:6px; }
+  .hero-copy .kicker { color:var(--link); font-size:.55rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
+  .hero-copy strong { font-size:1.15rem; line-height:1.1; letter-spacing:-.02em; }
+  .hero-copy p { color:var(--content-secondary); font-size:.63rem; max-width:34ch; }
+  .actions { display:flex; gap:6px; margin-top:4px; }
+  .btn { display:inline-flex; align-items:center; justify-content:center; height:28px; padding:0 10px; border-radius:6px; border:1px solid var(--border-control); background:transparent; color:var(--content-primary); font-size:.6rem; font-weight:700; }
+  .btn.primary { background:var(--action); border-color:transparent; color:var(--action-ink); }
+
+  .rail-head { display:flex; align-items:center; gap:8px; margin:14px 0 7px; }
+  .rail-head strong { font-size:.7rem; font-weight:650; margin-right:auto; }
+  .rail-head span { color:var(--content-secondary); font-size:.56rem; }
+  .rail { display:grid; grid-auto-flow:column; grid-auto-columns:130px; gap:9px; overflow:hidden; padding-bottom:2px; }
+  .frame.mobile .rail { grid-auto-columns:118px; }
+  .card { border:1px solid var(--border-subtle); border-radius:7px; overflow:hidden; background:var(--surface-card); }
+  .card .art { aspect-ratio:16/9; background:linear-gradient(140deg,#2a2119,#1b2029 46%,#0c0e12); position:relative; }
+  .card .art .rank { position:absolute; left:5px; bottom:0; color:var(--warning); font-size:1.05rem; font-weight:800; letter-spacing:-.04em; }
+  .card .art .prog { position:absolute; left:0; right:0; bottom:0; height:2px; background:rgba(255,255,255,.22); }
+  .card .art .prog i { display:block; width:58%; height:100%; background:var(--action); }
+  .card .t { padding:5px 6px 7px; }
+  .card .t b { display:block; font-size:.55rem; font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .card .t small { display:block; color:var(--content-secondary); font-size:.48rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .tabs { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:9px; }
+  .tabs span { font-size:.58rem; font-weight:650; color:var(--content-secondary); border:1px solid var(--border-subtle); border-radius:999px; padding:4px 8px; }
+  .tabs span.on { color:var(--content-primary); background:var(--action-soft); border-color:var(--action); font-weight:700; }
+  .grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:9px; }
+  .frame.mobile .grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .grid .card .t b { font-size:.52rem; }
+
+  .searchline { display:flex; gap:6px; align-items:center; height:36px; border:1px solid var(--focus); border-radius:7px; background:var(--surface-card); padding:0 10px; color:var(--content-secondary); font-size:.62rem; margin-bottom:10px; outline:2px solid var(--focus); outline-offset:1px; }
+  .searchline svg { width:14px; height:14px; }
+
+  .watch-grid { display:grid; grid-template-columns:minmax(0,1fr) 220px; gap:12px; }
+  .frame.mobile .watch-grid { grid-template-columns:1fr; }
+  .player { aspect-ratio:16/9; border-radius:8px; background:#000; position:relative; overflow:hidden; display:flex; align-items:flex-end; }
+  .player .va { position:absolute; inset:0; background:linear-gradient(135deg,#2a2119,#1b2029 48%,#000); }
+  .player .pc { position:relative; z-index:1; width:100%; padding:8px 10px 9px; display:flex; flex-direction:column; gap:6px; }
+  .player .track { height:3px; border-radius:4px; background:var(--media-track); }
+  .player .track i { display:block; width:46%; height:100%; background:var(--media-fill); border-radius:4px; }
+  .player .crow { display:flex; align-items:center; gap:8px; color:var(--media-muted); font-size:.5rem; }
+  .player .crow .dot { width:12px; height:12px; border-radius:50%; border:1px solid var(--media-border); background:var(--media-bg-ctl); }
+  .player .crow .grow { flex:1; }
+  .detail { margin-top:9px; }
+  .detail h3 { font-size:.9rem; font-weight:650; letter-spacing:-.01em; }
+  .detail .meta { color:var(--content-secondary); font-size:.56rem; margin-top:2px; }
+  .detail p { color:var(--content-secondary); font-size:.58rem; line-height:1.5; margin-top:6px; }
+  .aside { border:1px solid var(--border-subtle); border-radius:8px; background:var(--surface-card); padding:9px; }
+  .aside h4 { font-size:.62rem; font-weight:700; margin-bottom:6px; }
+  .eprow { display:flex; gap:6px; align-items:center; padding:5px 0; border-top:1px solid var(--border-subtle); }
+  .eprow:first-of-type { border-top:0; }
+  .eprow .num { width:16px; color:var(--content-tertiary); font-size:.52rem; }
+  .eprow .copy { min-width:0; }
+  .eprow b { display:block; font-size:.54rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .eprow small { display:block; color:var(--content-secondary); font-size:.47rem; }
+  .eprow .pbar { margin-left:auto; width:24px; height:2px; background:var(--media-track); border-radius:2px; }
+  .eprow .pbar i { display:block; width:60%; height:100%; background:var(--action); border-radius:2px; }
+
+  .list { border:1px solid var(--border-subtle); border-radius:8px; overflow:hidden; background:var(--surface-card); }
+  .listrow { display:flex; align-items:center; gap:9px; padding:10px; border-top:1px solid var(--border-subtle); }
+  .listrow:first-child { border-top:0; }
+  .listrow .ic { width:22px; height:22px; border:1px solid var(--border-control); border-radius:5px; display:grid; place-items:center; color:var(--content-secondary); font-size:.6rem; }
+  .listrow b { display:block; font-size:.64rem; }
+  .listrow small { display:block; color:var(--content-secondary); font-size:.53rem; }
+  .listrow .chev { margin-left:auto; color:var(--content-tertiary); font-size:.7rem; }
+  .profile-row { display:flex; align-items:center; gap:9px; padding:10px; border:1px solid var(--border-subtle); border-radius:8px; background:var(--surface-card); margin-bottom:10px; }
+  .profile-row .big-avatar { width:34px; height:34px; border-radius:50%; background:var(--action-soft); border:1px solid var(--border-control); display:grid; place-items:center; font-size:.66rem; font-weight:800; }
+  .profile-row b { display:block; font-size:.68rem; }
+  .profile-row small { display:block; color:var(--content-secondary); font-size:.53rem; }
+
+  .legal-grid { display:grid; grid-template-columns:150px minmax(0,1fr); gap:14px; }
+  .frame.mobile .legal-grid { grid-template-columns:1fr; }
+  .toc { border:1px solid var(--border-subtle); border-radius:8px; background:var(--surface-card); padding:9px; }
+  .toc b { display:block; font-size:.58rem; font-weight:700; margin-bottom:5px; }
+  .toc span { display:block; color:var(--content-secondary); font-size:.52rem; padding:2px 0; }
+  .article { border:1px solid var(--border-subtle); border-radius:8px; background:var(--surface-card); padding:12px; }
+  .article h3 { font-size:.92rem; font-weight:650; margin-bottom:3px; }
+  .article .stamp { color:var(--content-secondary); font-size:.52rem; }
+  .article .line { height:6px; border-radius:3px; background:var(--surface-sunken); margin-top:7px; }
+  .article .line.short { width:64%; }
+
+  .states { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  .frame.mobile .states { grid-template-columns:1fr; }
+  .state { border:1px solid var(--border-subtle); border-radius:8px; background:var(--surface-card); padding:12px; min-height:112px; display:flex; flex-direction:column; justify-content:center; gap:5px; }
+  .state .tag { font-size:.5rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--link); }
+  .state b { font-size:.68rem; }
+  .state p { color:var(--content-secondary); font-size:.55rem; }
+  .state .btn { align-self:flex-start; margin-top:3px; }
+
+  .adslot { display:flex; align-items:center; gap:8px; border:1px dashed var(--border-control); border-radius:7px; padding:8px; color:var(--content-secondary); font-size:.53rem; background:var(--surface-sunken); margin-top:9px; }
+  .adslot b { color:var(--warning); font-size:.5rem; letter-spacing:.1em; text-transform:uppercase; }
+
+  .note { margin-top:14px; color:var(--content-secondary); font-size:.63rem; line-height:1.55; max-width:78ch; }
+  .note b { color:var(--content-primary); }
+  .foot { margin-top:28px; padding-top:12px; border-top:1px solid var(--border-subtle); color:var(--content-secondary); font-size:.6rem; line-height:1.55; max-width:80ch; }
+  .foot b { color:var(--content-primary); }
+  code { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+
+  @media (max-width:640px) {
+    .brand span { display:none; }
+    .mock-body { grid-template-columns:1fr; }
+    .mock-sidebar { display:none; }
+  }
+  @media (prefers-reduced-motion:reduce) {
+    *, *::before, *::after { transition:none !important; animation:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="brand"><strong>MovieArena</strong><span>Phase 7 · layout atlas</span></div>
+  <span class="locked">Components v6.0</span>
+  <div class="seg" role="group" aria-label="Theme mode">
+    <button data-mode="system">System</button>
+    <button data-mode="dark" class="on">Dark</button>
+    <button data-mode="light">Light</button>
+  </div>
+  <span class="resolved" id="resolved">dark</span>
+</header>
+
+<main class="atlas">
+  <section class="intro">
+    <div class="eyebrow">Phase 7 draft v0.1</div>
+    <h1>One shell, composed for every page.</h1>
+    <p>Switch pages and viewports to inspect the frame, not the pixels. The atlas shows where the hero, rails, grid, player, episode aside, account panels, and state pages sit — and what collapses on mobile.</p>
+  </section>
+
+  <div class="controls">
+    <div class="pages" role="group" aria-label="Page">
+      <button data-page="home" class="on">Home</button>
+      <button data-page="browse">Browse</button>
+      <button data-page="search">Search</button>
+      <button data-page="watch">Watch</button>
+      <button data-page="list">My List</button>
+      <button data-page="more">More</button>
+      <button data-page="account">Account</button>
+      <button data-page="legal">Legal</button>
+      <button data-page="states">States</button>
+    </div>
+    <div class="seg" role="group" aria-label="Viewport">
+      <button data-view="desktop" class="on">Desktop</button>
+      <button data-view="mobile">Mobile</button>
+    </div>
+  </div>
+
+  <div class="spec" id="spec"><b>Home.</b> Editorial hero, Continue Watching first, then 8–15 rails. Empty rails are omitted.</div>
+
+  <div class="frame" id="frame">
+    <div class="mock-header">
+      <span class="mock-brand">MovieArena</span>
+      <div class="mock-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        Search titles, people, genres…
+      </div>
+      <span class="mock-avatar">A</span>
+    </div>
+
+    <div class="mock-body">
+      <aside class="mock-sidebar" aria-label="Preview sidebar">
+        <nav class="mock-nav">
+          <span class="on"><i></i>Home</span>
+          <span><i></i>Browse</span>
+          <span><i></i>My List</span>
+          <span><i></i>Account</span>
+          <span><i></i>More</span>
+        </nav>
+      </aside>
+
+      <div class="mock-main">
+
+        <!-- HOME -->
+        <section class="page on" id="page-home" aria-label="Home layout">
+          <div class="page-head"><h2>Home</h2><span class="sub">Editorial hero + rails</span></div>
+          <div class="hero">
+            <div class="hero-art"></div>
+            <div class="hero-copy">
+              <span class="kicker">Featured · Public domain</span>
+              <strong>The Cabinet of Dr. Caligari</strong>
+              <p>1920 · German Expressionism · 1h 16m · Official archive source.</p>
+              <div class="actions"><span class="btn primary">Play</span><span class="btn">My List</span></div>
+            </div>
+          </div>
+          <div class="rail-head"><strong>Continue Watching</strong><span>See all</span></div>
+          <div class="rail">
+            <div class="card"><div class="art"><span class="prog"><i></i></span></div><div class="t"><b>Frieren</b><small>S1 E4 · 12m left</small></div></div>
+            <div class="card"><div class="art"><span class="prog"><i></i></span></div><div class="t"><b>Scissor Seven</b><small>S3 E7 · 18m left</small></div></div>
+            <div class="card"><div class="art"><span class="prog"><i></i></span></div><div class="t"><b>Nosferatu</b><small>42m left</small></div></div>
+            <div class="card"><div class="art"><span class="prog"><i></i></span></div><div class="t"><b>Metropolis</b><small>1h 02m left</small></div></div>
+          </div>
+          <div class="rail-head"><strong>Top 10 today</strong><span>See all</span></div>
+          <div class="rail">
+            <div class="card"><div class="art"><span class="rank">01</span></div><div class="t"><b>Frieren</b><small>28 episodes</small></div></div>
+            <div class="card"><div class="art"><span class="rank">02</span></div><div class="t"><b>Scissor Seven</b><small>40 episodes</small></div></div>
+            <div class="card"><div class="art"><span class="rank">03</span></div><div class="t"><b>Caligari</b><small>1920</small></div></div>
+            <div class="card"><div class="art"><span class="rank">04</span></div><div class="t"><b>Nosferatu</b><small>1922</small></div></div>
+          </div>
+          <div class="adslot"><b>Ad</b> One labelled slot per rail. Reserved height. Never in Continue Watching.</div>
+          <div class="rail-head"><strong>Classic cinema</strong><span>See all</span></div>
+          <div class="rail">
+            <div class="card"><div class="art"></div><div class="t"><b>Metropolis</b><small>1927 · 2h 33m</small></div></div>
+            <div class="card"><div class="art"></div><div class="t"><b>Nosferatu</b><small>1922 · 1h 34m</small></div></div>
+            <div class="card"><div class="art"></div><div class="t"><b>The General</b><small>1926 · 1h 19m</small></div></div>
+            <div class="card"><div class="art"></div><div class="t"><b>Sherlock Jr.</b><small>1924 · 45m</small></div></div>
+          </div>
+          <p class="note">Hero primary opens Watch <b>paused</b>. Continue Watching is the only rail that auto-resumes. 8–15 rails maximum.</p>
+        </section>
+
+        <!-- BROWSE -->
+        <section class="page" id="page-browse" aria-label="Browse layout">
+          <div class="page-head"><h2>Browse</h2><span class="sub">Real section destinations</span></div>
+          <div class="tabs"><span class="on">TV</span><span>Movies</span><span>Animation</span><span>Most Watched</span></div>
+          <div class="tabs"><span class="on">All</span><span>Anime</span><span>Donghua</span><span>Classic cinema</span><span>Public domain</span><span>Popular</span><span>Newest</span></div>
+          <div class="grid">
+            <div class="card"><div class="art"></div><div class="t"><b>Frieren</b><small>28 eps · SUB · DUB</small></div></div>
+            <div class="card"><div class="art"></div><div class="t"><b>Scissor Seven</b><small>40 eps · SUB · DUB</small></div></div>
+            <div class="card"><div class="art"></div><div class="t"><b>Link Click</b><small>12 eps · SUB</small></div></div>
+            <div class="card"><div class="art"></div><div class="t"><b>Caligari</b><small>1920 · PD</small></div></div>
+            <div class="card"><div class="art"></div><div class="t"><b>Nosferatu</b><small>1922 · PD</small></div></div>
+            <div class="card"><div class="art"></div><div class="t"><b>Metropolis</b><small>1927 · PD</small></div></div>
+            <div class="card"><div class="art"></div><div class="t"><b>Heavenly Official</b><small>11 eps · SUB</small></div></div>
+            <div class="card"><div class="art"></div><div class="t"><b>The General</b><small>1926 · PD</small></div></div>
+          </div>
+          <div class="adslot"><b>Ad</b> After the second row, maximum two per page.</div>
+          <p class="note">Filters are URL-addressable. Pages load 48 items; <b>Load more</b> keeps focus and scroll.</p>
+        </section>
+
+        <!-- SEARCH -->
+        <section class="page" id="page-search" aria-label="Search layout">
+          <div class="page-head"><h2>Search</h2><span class="sub">Autofocus from the tab</span></div>
+          <div class="searchline">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            frieren
+          </div>
+          <div class="tabs"><span class="on">Recent: frieren</span><span>Recent: caligari</span><span>Hot: donghua</span><span>Hot: public domain</span></div>
+          <div class="grid">
+            <div class="card"><div class="art"></div><div class="t"><b>Frieren</b><small>28 eps · SUB · DUB</small></div></div>
+            <div class="card"><div class="art"></div><div class="t"><b>Frieren S1 E4</b><small>Official embed</small></div></div>
+            <div class="card"><div class="art"></div><div class="t"><b>Beyond Journey's End</b><small>Related</small></div></div>
+            <div class="card"><div class="art"></div><div class="t"><b>Fantasy anime</b><small>Browse section</small></div></div>
+          </div>
+          <p class="note">Result selection opens Watch <b>paused</b>. Empty query shows local recent searches and hot words; no personal history without consent.</p>
+        </section>
+
+        <!-- WATCH -->
+        <section class="page" id="page-watch" aria-label="Watch layout">
+          <div class="page-head"><h2>Watch</h2><span class="sub">Player first · detail page</span></div>
+          <div class="watch-grid">
+            <div>
+              <div class="player">
+                <div class="va"></div>
+                <div class="pc">
+                  <div class="track"><i></i></div>
+                  <div class="crow"><span class="dot"></span><span>12:34</span><span class="grow"></span><span>24:10</span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+                </div>
+              </div>
+              <div class="detail">
+                <h3>Frieren: Beyond Journey's End</h3>
+                <div class="meta">S1 E4 · 24m · SUB · DUB · Official source</div>
+                <p>Opens paused at the saved position. Explicit Resume is the only path that auto-plays. Source note and rights explanation stay visible below.</p>
+                <div class="actions"><span class="btn primary">Resume 12:34</span><span class="btn">My List</span><span class="btn">Share</span></div>
+              </div>
+            </div>
+            <div class="aside">
+              <h4>Episodes</h4>
+              <div class="eprow"><span class="num">01</span><div class="copy"><b>The Journey's End</b><small>24m · SUB · DUB</small></div><span class="pbar"><i></i></span></div>
+              <div class="eprow"><span class="num">02</span><div class="copy"><b>It Didn't Have to Be Magic</b><small>24m · SUB · DUB</small></div><span class="pbar"><i></i></span></div>
+              <div class="eprow"><span class="num">03</span><div class="copy"><b>Killing Magic</b><small>24m · SUB · DUB</small></div><span class="pbar"><i></i></span></div>
+              <div class="eprow"><span class="num">04</span><div class="copy"><b>The Land Where Souls Rest</b><small>24m · SUB · DUB</small></div><span class="pbar"><i></i></span></div>
+              <div class="eprow"><span class="num">05</span><div class="copy"><b>Phantoms of the Dead</b><small>24m · SUB · DUB</small></div></div>
+            </div>
+          </div>
+          <p class="note">No ads on Watch. Player keeps 16:9 at every width; the tab bar is hidden. Below <code>lg</code>, episodes move under the synopsis.</p>
+        </section>
+
+        <!-- MY LIST -->
+        <section class="page" id="page-list" aria-label="My List layout">
+          <div class="page-head"><h2>My List</h2><span class="sub">Continue Watching + saved</span></div>
+          <div class="rail-head"><strong>Continue Watching</strong><span>See all</span></div>
+          <div class="rail">
+            <div class="card"><div class="art"><span class="prog"><i></i></span></div><div class="t"><b>Frieren</b><small>S1 E4 · 12m left</small></div></div>
+            <div class="card"><div class="art"><span class="prog"><i></i></span></div><div class="t"><b>Nosferatu</b><small>42m left</small></div></div>
+          </div>
+          <div class="rail-head"><strong>Saved</strong><span>8 titles</span></div>
+          <div class="grid">
+            <div class="card"><div class="art"></div><div class="t"><b>Caligari</b><small>1920 · PD</small></div></div>
+            <div class="card"><div class="art"></div><div class="t"><b>Metropolis</b><small>1927 · PD</small></div></div>
+            <div class="card"><div class="art"></div><div class="t"><b>Link Click</b><small>12 eps</small></div></div>
+            <div class="card"><div class="art"></div><div class="t"><b>Scissor Seven</b><small>40 eps</small></div></div>
+          </div>
+          <p class="note">No ads in My List. Remove is available from the card overflow and Watch, never hover-only.</p>
+        </section>
+
+        <!-- MORE -->
+        <section class="page" id="page-more" aria-label="More layout">
+          <div class="page-head"><h2>More</h2><span class="sub">Profile, account, privacy</span></div>
+          <div class="profile-row"><span class="big-avatar">A</span><div><b>Alex</b><small>Guest · progress on this device</small></div></div>
+          <div class="list">
+            <div class="listrow"><span class="ic">↻</span><div><b>Save your progress across devices</b><small>Sign in to sync. Dismissible.</small></div><span class="chev">›</span></div>
+            <div class="listrow"><span class="ic">▤</span><div><b>Playback settings</b><small>Captions, quality, autoplay next</small></div><span class="chev">›</span></div>
+            <div class="listrow"><span class="ic">◐</span><div><b>Privacy choices</b><small>Analytics off · Personalised ads off</small></div><span class="chev">›</span></div>
+            <div class="listrow"><span class="ic">i</span><div><b>About</b><small>Version, sources, accessibility</small></div><span class="chev">›</span></div>
+            <div class="listrow"><span class="ic">§</span><div><b>Legal</b><small>Sources, copyright, takedown</small></div><span class="chev">›</span></div>
+            <div class="listrow"><span class="ic">◍</span><div><b>Privacy notice</b><small>Data, retention, export, deletion</small></div><span class="chev">›</span></div>
+          </div>
+          <p class="note">Kids sees only profile switch, playback settings, and about. No account, no external links.</p>
+        </section>
+
+        <!-- ACCOUNT -->
+        <section class="page" id="page-account" aria-label="Account layout">
+          <div class="page-head"><h2>Account</h2><span class="sub">Overview · Profiles · Privacy & data</span></div>
+          <div class="tabs"><span class="on">Overview</span><span>Profiles</span><span>Privacy & data</span><span>Devices</span></div>
+          <div class="list">
+            <div class="listrow"><span class="ic">A</span><div><b>Alex</b><small>Current profile · synced 2 min ago</small></div><span class="chev">›</span></div>
+            <div class="listrow"><span class="ic">⇄</span><div><b>Sync status</b><small>Progress and My List are up to date</small></div><span class="chev">›</span></div>
+            <div class="listrow"><span class="ic">⌂</span><div><b>Household profiles</b><small>2 of 4 used · 1 kids profile</small></div><span class="chev">›</span></div>
+            <div class="listrow"><span class="ic">◐</span><div><b>Privacy & data</b><small>Consent history, export, delete</small></div><span class="chev">›</span></div>
+            <div class="listrow"><span class="ic">↪</span><div><b>Sign out</b><small>Keeps local guest progress</small></div><span class="chev">›</span></div>
+          </div>
+          <div class="adslot"><b>Note</b> Destructive actions use the confirmation sheet and require re-authentication. Account is not reachable from Kids.</div>
+        </section>
+
+        <!-- LEGAL -->
+        <section class="page" id="page-legal" aria-label="Legal layout">
+          <div class="page-head"><h2>Legal & Privacy</h2><span class="sub">66ch reading measure</span></div>
+          <div class="legal-grid">
+            <aside class="toc"><b>On this page</b><span>Sources</span><span>Copyright</span><span>Official channels</span><span>Takedown</span><span>Privacy</span><span>Your choices</span></aside>
+            <article class="article">
+              <h3>Legal</h3>
+              <div class="stamp">Last updated 7 November 2026</div>
+              <div class="line"></div><div class="line"></div><div class="line short"></div>
+              <div class="line"></div><div class="line"></div><div class="line short"></div>
+              <div class="line"></div><div class="line"></div><div class="line short"></div>
+              <p class="note">Copy must match the shipped product. The current “no user database and no analytics” claim is removed at launch. Legal and Privacy are split.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- STATES -->
+        <section class="page" id="page-states" aria-label="State pages layout">
+          <div class="page-head"><h2>State pages</h2><span class="sub">Empty · error · offline · not found</span></div>
+          <div class="states">
+            <div class="state"><span class="tag">Loading</span><b>Skeletons at final size</b><p>Hero, rails, and grid reserve dimensions. No content spinner.</p></div>
+            <div class="state"><span class="tag">Empty</span><b>Your list is empty</b><p>One cause, one primary action, one secondary link.</p><span class="btn primary">Browse titles</span></div>
+            <div class="state"><span class="tag">Error</span><b>Catalog unavailable</b><p>Header and nav stay usable. Retry or use cached catalog.</p><span class="btn primary">Retry</span></div>
+            <div class="state"><span class="tag">Offline</span><b>You're offline</b><p>Cached metadata stays. Playback explains the connection requirement.</p><span class="btn">Retry</span></div>
+            <div class="state"><span class="tag">Not found</span><b>We couldn't find that title.</b><p>The failed slug is echoed as text. Search is focused.</p><span class="btn primary">Search</span></div>
+            <div class="state"><span class="tag">Kids block</span><b>Not available in Kids</b><p>Switch profile with PIN. No external links, no alarm styling.</p><span class="btn">Switch profile</span></div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+    <div class="mock-tabbar" aria-label="Preview mobile tabs">
+      <span class="on"><i></i>Home</span><span><i></i>Browse</span><span><i></i>Search</span><span><i></i>My List</span><span><i></i>More</span>
+    </div>
+  </div>
+
+  <p class="foot"><b>Preview only.</b> This atlas is a layout decision aid, not a production page. The shell, breakpoints, grid, page specs, state pages, parity map, and gate decisions are in <code>docs/design/phase-7-page-layouts.md</code>.</p>
+</main>
+
+<script>
+  const root = document.documentElement;
+  const mq = matchMedia('(prefers-color-scheme: dark)');
+  const resolvedEl = document.getElementById('resolved');
+  const modeButtons = [...document.querySelectorAll('[data-mode]')];
+  const STORAGE_KEY = 'ma.preview7.theme';
+
+  function readMode() { try { return localStorage.getItem(STORAGE_KEY) || 'system'; } catch (_) { return 'system'; } }
+  function resolvedTheme(mode) { return mode === 'system' ? (mq.matches ? 'dark' : 'light') : mode; }
+  function applyMode(mode, animate = true) {
+    const theme = resolvedTheme(mode);
+    if (animate && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      root.classList.add('switching');
+      setTimeout(() => root.classList.remove('switching'), 190);
+    }
+    root.dataset.theme = theme;
+    root.style.colorScheme = theme;
+    try { localStorage.setItem(STORAGE_KEY, mode); } catch (_) {}
+    modeButtons.forEach(b => {
+      const on = b.dataset.mode === mode;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
+    });
+    resolvedEl.textContent = mode === 'system' ? 'system → ' + theme : theme;
+  }
+  modeButtons.forEach(b => b.addEventListener('click', () => applyMode(b.dataset.mode)));
+  mq.addEventListener('change', () => { if (readMode() === 'system') applyMode('system', false); });
+
+  const specs = {
+    home: '<b>Home.</b> Editorial hero, Continue Watching first, then 8–15 rails. Empty rails are omitted. Hero opens Watch paused.',
+    browse: '<b>Browse.</b> Section tabs, URL-addressable filters, 48-item pages. Ads after the second row, maximum two.',
+    search: '<b>Search.</b> Full-screen field on mobile, autofocus from the tab. Local history by default; results open Watch paused.',
+    watch: '<b>Watch.</b> Player first at 16:9; 320px episode aside at lg+. No ads. Below lg, episodes move under the synopsis.',
+    list: '<b>My List.</b> Continue Watching first when present, then the saved grid. No ads; remove is labelled and never hover-only.',
+    more: '<b>More.</b> Profile, account, playback, privacy, about, legal, privacy notice. Kids sees only three rows.',
+    account: '<b>Account.</b> Four URL-addressable tabs. Destructive actions use a sheet and re-authentication. Not reachable from Kids.',
+    legal: '<b>Legal & Privacy.</b> 66ch measure, sticky TOC on desktop, collapsible on mobile. Copy must match shipped behaviour.',
+    states: '<b>States.</b> Loading, empty, error, offline, not found, and Kids block keep the header and nav usable.'
+  };
+
+  const pageButtons = [...document.querySelectorAll('[data-page]')];
+  const pages = [...document.querySelectorAll('.page')];
+  const spec = document.getElementById('spec');
+  pageButtons.forEach(btn => {
+    btn.setAttribute('aria-pressed', String(btn.classList.contains('on')));
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.page;
+      pageButtons.forEach(b => {
+        const on = b === btn;
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-pressed', String(on));
+      });
+      pages.forEach(p => p.classList.toggle('on', p.id === 'page-' + target));
+      spec.innerHTML = specs[target];
+    });
+  });
+
+  const viewButtons = [...document.querySelectorAll('[data-view]')];
+  const frame = document.getElementById('frame');
+  viewButtons.forEach(btn => {
+    btn.setAttribute('aria-pressed', String(btn.classList.contains('on')));
+    btn.addEventListener('click', () => {
+      viewButtons.forEach(b => {
+        const on = b === btn;
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-pressed', String(on));
+      });
+      frame.classList.toggle('mobile', btn.dataset.view === 'mobile');
+    });
+  });
+
+  applyMode(readMode(), false);
+</script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+# Publishes `media/` (catalog.json + the MP4 test clips) to GitHub Pages so the
+# app can pull movie details and video from a real server rather than an embed.
+#
+# Pages URL: https://<owner>.github.io/MovieArena/
+#   -> https://<owner>.github.io/MovieArena/catalog.json
+#   -> https://<owner>.github.io/MovieArena/videos/<clip>.mp4
+name: Media server
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'media/**'
+      - '.github/workflows/media.yml'
+  # Allows a manual publish from the Actions tab.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race; a queued run cancels nothing already live.
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Validate the catalog
+        run: |
+          test -f media/catalog.json || { echo "media/catalog.json missing"; exit 1; }
+          node -e "
+            const c = require('./media/catalog.json');
+            if (!Array.isArray(c.titles) || c.titles.length === 0) {
+              console.error('catalog.titles must be a non-empty array');
+              process.exit(1);
+            }
+            console.log('catalog ok:', c.titles.length, 'titles');
+          "
+
+      - name: List what ships
+        run: find media -type f -printf '%8s  %p\n' | sort -k2
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload media directory
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: media
+
+      - name: Deploy to Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

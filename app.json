@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "MovieArena",
+    "slug": "moviearena",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "moviearena",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "platforms": ["ios", "android", "web"],
+    "plugins": ["expo-router"],
+    "web": {
+      "bundler": "metro",
+      "output": "server"
+    }
+  }
+}

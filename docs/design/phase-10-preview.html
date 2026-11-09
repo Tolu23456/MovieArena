@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-voice="proposed">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase 10 — MovieArena content and legal</title>
+<style>
+  :root {
+    --ma-neutral-0:#ffffff; --ma-neutral-50:#f6f7f9; --ma-neutral-75:#f2f4f7;
+    --ma-neutral-100:#eef1f5; --ma-neutral-150:#e1e5ec; --ma-neutral-200:#c6cdd9;
+    --ma-neutral-300:#9aa3b2; --ma-neutral-400:#828d9d; --ma-neutral-500:#6f7a8c;
+    --ma-neutral-600:#646e7c; --ma-neutral-700:#5c6472; --ma-neutral-850:#282e38;
+    --ma-neutral-900:#1b2029; --ma-neutral-925:#161a21; --ma-neutral-950:#12151b;
+    --ma-neutral-1000:#0c0e12;
+    --ma-accent-400:#ff7a62; --ma-accent-500:#ff5c47; --ma-accent-600:#e84632;
+    --ma-accent-700:#c0341f; --ma-warm-300:#ffb066; --ma-warm-400:#ff8a3d;
+    --ma-success-300:#8fcfa5; --ma-warning-300:#e8c37a; --ma-danger-300:#ff9a8f;
+    --ma-info-300:#9db8ff;
+    --motion-fast:120ms; --motion-base:160ms; --motion-slow:240ms;
+    --ease-standard:cubic-bezier(.2,.7,.2,1);
+    --ease-exit:cubic-bezier(.4,0,1,1);
+  }
+  :root, [data-theme="dark"] {
+    color-scheme: dark;
+    --surface-page:var(--ma-neutral-1000); --surface-sunken:var(--ma-neutral-950);
+    --surface-card:var(--ma-neutral-925); --surface-raised:var(--ma-neutral-900);
+    --border-subtle:var(--ma-neutral-850); --border-control:var(--ma-neutral-600);
+    --border-emphasis:var(--ma-neutral-500);
+    --content-primary:var(--ma-neutral-100); --content-secondary:var(--ma-neutral-300);
+    --content-tertiary:var(--ma-neutral-400);
+    --action:var(--ma-accent-500); --action-hover:var(--ma-accent-400);
+    --action-pressed:var(--ma-accent-600); --action-ink:var(--ma-neutral-1000);
+    --action-soft:rgba(255,92,71,.16);
+    --focus:var(--ma-warm-400); --link:var(--ma-warm-400); --link-hover:var(--ma-warm-300);
+    --success:var(--ma-success-300); --warning:var(--ma-warning-300);
+    --danger:var(--ma-danger-300); --info:var(--ma-info-300);
+    --switch-off:var(--ma-neutral-600); --switch-knob:var(--ma-neutral-100);
+    --scrim:rgba(7,8,11,.72);
+    --elevation-3:0 24px 70px rgba(0,0,0,.38);
+    --toast-bg:var(--ma-neutral-0); --toast-fg:var(--ma-neutral-1000);
+  }
+  [data-theme="light"] {
+    color-scheme: light;
+    --surface-page:var(--ma-neutral-50); --surface-sunken:var(--ma-neutral-100);
+    --surface-card:var(--ma-neutral-0); --surface-raised:var(--ma-neutral-75);
+    --border-subtle:var(--ma-neutral-150); --border-control:var(--ma-neutral-500);
+    --border-emphasis:var(--ma-neutral-600);
+    --content-primary:var(--ma-neutral-950); --content-secondary:var(--ma-neutral-700);
+    --content-tertiary:var(--ma-neutral-600);
+    --action:var(--ma-accent-500); --action-hover:var(--ma-accent-600);
+    --action-pressed:var(--ma-accent-600); --action-ink:var(--ma-neutral-950);
+    --action-soft:rgba(255,92,71,.12);
+    --focus:var(--ma-accent-700); --link:var(--ma-accent-700); --link-hover:#972817;
+    --success:#2f6b3a; --warning:#8a5a12; --danger:#b3261e; --info:#2f5bb7;
+    --switch-off:var(--ma-neutral-500); --switch-knob:var(--ma-neutral-0);
+    --scrim:rgba(18,21,27,.48);
+    --elevation-3:0 24px 60px rgba(35,48,80,.18);
+    --toast-bg:var(--ma-neutral-950); --toast-fg:var(--ma-neutral-0);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin:0; font-family:"Inter","Segoe UI",system-ui,-apple-system,sans-serif;
+    background:var(--surface-page); color:var(--content-primary);
+    font-size:.875rem; line-height:1.6;
+    transition:background-color 150ms ease, color 150ms ease;
+  }
+  html.switching, html.switching * { transition:background-color 150ms ease, border-color 150ms ease, color 150ms ease !important; }
+  :focus-visible { outline:2px solid var(--focus); outline-offset:2px; border-radius:4px; }
+  a { color:var(--link); text-underline-offset:2px; }
+  a:hover { color:var(--link-hover); }
+  button, input, select, textarea { font:inherit; }
+  h1,h2,h3,h4,p { margin:0; }
+
+  .skip {
+    position:fixed; left:12px; top:-80px; z-index:200;
+    background:var(--action); color:var(--action-ink); font-weight:800; font-size:.78rem;
+    padding:10px 14px; border-radius:8px; text-decoration:none;
+    transition:top var(--motion-fast) var(--ease-standard);
+  }
+  .skip:focus { top:12px; }
+
+  .bar {
+    position:sticky; top:0; z-index:40; display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:10px 18px; background:var(--surface-page); border-bottom:1px solid var(--border-subtle);
+  }
+  .brand { display:flex; align-items:baseline; gap:9px; margin-right:auto; }
+  .brand strong { font-size:.92rem; letter-spacing:-.01em; }
+  .brand span { color:var(--content-secondary); font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; }
+  .locked { color:var(--content-secondary); font-size:.6rem; font-weight:650; border:1px solid var(--border-subtle); border-radius:999px; padding:4px 8px; }
+  .seg { display:inline-flex; padding:3px; gap:2px; background:var(--surface-sunken); border:1px solid var(--border-subtle); border-radius:9px; }
+  .seg button {
+    appearance:none; border:0; background:transparent; color:var(--content-secondary);
+    font-size:.68rem; font-weight:650; padding:6px 9px; border-radius:6px; cursor:pointer;
+  }
+  .seg button:hover { color:var(--content-primary); background:var(--surface-raised); }
+  .seg button.on { background:var(--action); color:var(--action-ink); }
+  .resolved { color:var(--content-secondary); font-size:.62rem; min-width:76px; font-variant-numeric:tabular-nums; }
+  .toggle {
+    appearance:none; border:1px solid var(--border-control); background:transparent; color:var(--content-primary);
+    font-size:.66rem; font-weight:700; padding:6px 10px; border-radius:7px; cursor:pointer; display:inline-flex; align-items:center; gap:7px;
+    min-height:38px;
+  }
+  .toggle:hover { background:var(--surface-raised); border-color:var(--border-emphasis); }
+  .toggle .dot { width:8px; height:8px; border-radius:50%; background:var(--content-tertiary); }
+  .toggle[aria-pressed="true"] { border-color:var(--focus); }
+  .toggle[aria-pressed="true"] .dot { background:var(--focus); }
+
+  .wrap { max-width:1140px; margin:0 auto; padding:28px 18px 84px; }
+  .intro { max-width:820px; margin-bottom:26px; }
+  .eyebrow { color:var(--link); font-size:.62rem; font-weight:750; letter-spacing:.14em; text-transform:uppercase; }
+  h1 { font-size:clamp(1.8rem,3.8vw,2.7rem); line-height:1.05; letter-spacing:-.03em; font-weight:650; margin:9px 0 10px; }
+  .intro p { color:var(--content-secondary); font-size:.86rem; max-width:72ch; }
+
+  .block { margin-top:38px; }
+  .block-head { display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:11px; }
+  .block-head h2 { font-size:1rem; font-weight:650; letter-spacing:-.01em; }
+  .block-head p { color:var(--content-secondary); font-size:.68rem; max-width:70ch; }
+
+  .panel { background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:14px; padding:16px; }
+  .panel + .panel { margin-top:12px; }
+  .split { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .stack { display:flex; flex-direction:column; gap:10px; }
+  .row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .note { color:var(--content-secondary); font-size:.65rem; line-height:1.55; }
+  .note b { color:var(--content-primary); }
+  code { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.92em; }
+  .tag {
+    display:inline-flex; align-items:center; gap:5px; padding:2px 7px; border-radius:999px;
+    border:1px solid var(--border-subtle); font-size:.56rem; font-weight:750; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--content-secondary);
+  }
+  .tag.p0 { color:var(--danger); border-color:var(--danger); }
+  .tag.p1 { color:var(--warning); border-color:var(--warning); }
+  .tag.p2 { color:var(--info); border-color:var(--info); }
+  .tag.ok { color:var(--success); border-color:var(--success); }
+
+  .btn {
+    appearance:none; border:1px solid var(--border-control); background:transparent; color:var(--content-primary);
+    min-height:44px; padding:9px 15px; border-radius:8px; font-size:.75rem; font-weight:700; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .btn:hover { border-color:var(--border-emphasis); background:var(--surface-raised); }
+  .btn:active { background:var(--surface-sunken); }
+  .btn.primary { background:var(--action); border-color:transparent; color:var(--action-ink); }
+  .btn.primary:hover { background:var(--action-hover); }
+  .btn.primary:active { background:var(--action-pressed); }
+  .btn.sm { min-height:32px; padding:5px 10px; font-size:.68rem; }
+  .btn:disabled { color:var(--content-tertiary); background:var(--surface-raised); border-color:var(--border-subtle); cursor:not-allowed; }
+
+  /* copy pairs */
+  .copies { display:grid; gap:10px; }
+  .copy {
+    border:1px solid var(--border-subtle); border-radius:10px; padding:11px 12px; background:var(--surface-sunken);
+  }
+  .copy-top { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  .copy-top b { font-size:.66rem; letter-spacing:.06em; text-transform:uppercase; color:var(--content-secondary); }
+  .copy p { font-size:.82rem; }
+  .copy .label { font-size:.6rem; font-weight:750; letter-spacing:.08em; text-transform:uppercase; }
+  .copy .old .label { color:var(--danger); }
+  .copy .new .label { color:var(--success); }
+  [data-voice="current"] .copy-proposed { display:none; }
+  [data-voice="proposed"] .copy-current { display:none; }
+  .copy .old { display:block; }
+  .copy .new { display:block; margin-top:5px; }
+  .copy .old p { color:var(--content-secondary); text-decoration:line-through; text-decoration-color:var(--danger); }
+  .copy .new p { color:var(--content-primary); }
+
+  /* filter */
+  .filter {
+    min-height:40px; padding:7px 11px; border-radius:8px; border:1px solid var(--border-control);
+    background:var(--surface-sunken); color:var(--content-primary); min-width:220px;
+  }
+  .filter:focus { border-color:var(--focus); }
+  .count { color:var(--content-secondary); font-size:.64rem; font-variant-numeric:tabular-nums; }
+
+  /* tables */
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:.68rem; }
+  th {
+    text-align:left; color:var(--content-secondary); font-size:.56rem; font-weight:750;
+    letter-spacing:.09em; text-transform:uppercase; padding:7px 8px; border-bottom:1px solid var(--border-subtle);
+    white-space:nowrap;
+  }
+  td { padding:8px; border-bottom:1px solid var(--border-subtle); vertical-align:top; }
+  tr:last-child td { border-bottom:0; }
+  td.num { font-variant-numeric:tabular-nums; color:var(--content-secondary); width:2.2rem; }
+  td.loc { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.62rem; color:var(--content-secondary); white-space:nowrap; }
+  td.claim { max-width:25ch; }
+  td.fix { max-width:30ch; }
+  .row-hidden { display:none; }
+
+  /* tabs */
+  .tabs { display:flex; gap:4px; flex-wrap:wrap; padding:3px; background:var(--surface-sunken); border:1px solid var(--border-subtle); border-radius:9px; width:max-content; max-width:100%; }
+  .tabs button {
+    appearance:none; border:0; background:transparent; color:var(--content-secondary);
+    font-size:.68rem; font-weight:700; padding:7px 11px; border-radius:6px; cursor:pointer; min-height:34px;
+  }
+  .tabs button:hover { color:var(--content-primary); background:var(--surface-raised); }
+  .tabs button[aria-selected="true"] { background:var(--action); color:var(--action-ink); }
+  .tabpanel[hidden] { display:none; }
+  .state-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:9px; margin-top:11px; }
+  .state-card { border:1px solid var(--border-subtle); border-radius:9px; padding:10px 11px; background:var(--surface-sunken); }
+  .state-card b { display:block; font-size:.6rem; letter-spacing:.08em; text-transform:uppercase; color:var(--content-secondary); margin-bottom:4px; }
+  .state-card p { font-size:.76rem; }
+
+  /* dialog */
+  .scrim {
+    position:fixed; inset:0; background:var(--scrim); z-index:90;
+    display:grid; place-items:center; padding:20px;
+    opacity:0; visibility:hidden; transition:opacity var(--motion-base) var(--ease-standard), visibility 0s linear var(--motion-base);
+  }
+  .scrim.open { opacity:1; visibility:visible; transition:opacity var(--motion-base) var(--ease-standard); }
+  .sheet {
+    width:min(500px,100%); background:var(--surface-card); border:1px solid var(--border-subtle);
+    border-radius:14px; box-shadow:var(--elevation-3); padding:17px;
+  }
+  .sheet-head { display:flex; align-items:flex-start; gap:10px; }
+  .sheet-head h3 { font-size:1rem; font-weight:650; margin-right:auto; }
+  .sheet-body { color:var(--content-secondary); font-size:.78rem; margin-top:8px; }
+  .sheet-foot { display:flex; justify-content:flex-end; gap:8px; margin-top:16px; flex-wrap:wrap; }
+  .icon-btn {
+    appearance:none; border:1px solid var(--border-control); background:transparent; color:var(--content-secondary);
+    width:40px; height:40px; border-radius:7px; display:grid; place-items:center; cursor:pointer;
+  }
+  .icon-btn:hover { border-color:var(--border-emphasis); color:var(--content-primary); background:var(--surface-raised); }
+
+  /* consent */
+  .consent-actions { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:13px; }
+  .consent-actions .btn { width:100%; }
+  .consent-actions .btn.primary { background:var(--action); }
+  .consent-actions .btn[aria-pressed="true"] { outline:2px solid var(--focus); outline-offset:2px; }
+  .switches { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+  .switch-row { display:flex; align-items:center; gap:10px; justify-content:space-between; border-top:1px solid var(--border-subtle); padding-top:9px; }
+  .switch-row p { font-size:.72rem; }
+  .switch-row small { display:block; color:var(--content-secondary); font-size:.62rem; margin-top:2px; }
+  .switch {
+    appearance:none; border:1px solid var(--switch-off); background:var(--surface-sunken); width:44px; height:26px;
+    border-radius:999px; position:relative; cursor:pointer; flex-shrink:0;
+  }
+  .switch::after {
+    content:""; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%;
+    background:var(--switch-knob); transition:transform var(--motion-fast) var(--ease-standard), background-color var(--motion-fast);
+  }
+  .switch[aria-checked="true"] { background:var(--action); border-color:var(--action); }
+  .switch[aria-checked="true"]::after { transform:translateX(18px); background:var(--action-ink); }
+
+  /* player strip */
+  .player-strip {
+    border-radius:10px; overflow:hidden; background:#000; color:#fff; padding:12px;
+    display:flex; flex-direction:column; gap:9px;
+  }
+  .player-strip .row { color:#c7ccd6; font-size:.64rem; }
+  .media-btn {
+    appearance:none; border:0; background:transparent; color:#fff; padding:6px; border-radius:6px;
+    min-width:38px; min-height:38px; cursor:default; display:inline-grid; place-items:center; font-size:1rem;
+  }
+  .media-btn:focus-visible { outline:2px solid var(--focus); }
+  .progress { height:12px; border-radius:4px; background:rgba(255,255,255,.22); position:relative; overflow:hidden; }
+  .progress span { position:absolute; inset:0 auto 0 0; width:48%; background:var(--action); }
+  .kbd { border:1px solid var(--border-control); border-bottom-width:2px; border-radius:5px; padding:1px 5px; font-size:.62rem; font-family:ui-monospace,monospace; }
+
+  /* legal */
+  .legal-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .legal-col { border:1px solid var(--border-subtle); border-radius:12px; padding:14px; background:var(--surface-card); }
+  .legal-col h3 { font-size:.72rem; font-weight:750; letter-spacing:.08em; text-transform:uppercase; margin-bottom:9px; }
+  .legal-col.before h3 { color:var(--danger); }
+  .legal-col.after h3 { color:var(--success); }
+  .legal-col p, .legal-col li { font-size:.72rem; color:var(--content-secondary); }
+  .legal-col ul { margin:0; padding-left:17px; display:flex; flex-direction:column; gap:5px; }
+  .legal-col.before li { text-decoration:line-through; text-decoration-color:var(--danger); }
+  .legal-col .why { display:block; color:var(--danger); font-size:.6rem; text-decoration:none; margin-top:2px; }
+  .legal-col.after li { color:var(--content-primary); }
+
+  /* ads / kids */
+  .ad-card { border:1px solid var(--border-control); border-radius:10px; overflow:hidden; background:var(--surface-sunken); }
+  .ad-top { display:flex; align-items:center; gap:8px; padding:7px 10px; background:var(--surface-raised); font-size:.62rem; }
+  .ad-top b { color:var(--warning); letter-spacing:.08em; text-transform:uppercase; }
+  .ad-body { padding:18px 12px; text-align:center; color:var(--content-secondary); font-size:.74rem; }
+  .kids-card { border:1px solid var(--border-subtle); border-radius:10px; padding:14px; background:var(--surface-sunken); }
+  .kids-card h3 { font-size:1rem; }
+  .kids-card p { color:var(--content-secondary); font-size:.76rem; margin-top:6px; }
+  .kids-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:11px; }
+
+  /* checker */
+  .checker-input {
+    width:100%; min-height:96px; resize:vertical; padding:10px 12px; border-radius:8px;
+    border:1px solid var(--border-control); background:var(--surface-sunken); color:var(--content-primary);
+    font-size:.78rem; line-height:1.5;
+  }
+  .results { margin-top:10px; display:flex; flex-direction:column; gap:6px; }
+  .result { border-left:3px solid var(--danger); padding:6px 9px; background:var(--surface-sunken); font-size:.7rem; }
+  .result b { color:var(--danger); }
+  .result.ok { border-color:var(--success); }
+  .result.ok b { color:var(--success); }
+
+  /* toast */
+  .toast {
+    position:fixed; left:50%; bottom:22px; transform:translateX(-50%);
+    background:var(--toast-bg); color:var(--toast-fg); border-radius:9px; padding:10px 14px;
+    font-size:.72rem; font-weight:650; display:flex; align-items:center; gap:12px; z-index:120;
+    opacity:0; visibility:hidden; transition:opacity var(--motion-base) var(--ease-standard), visibility 0s linear var(--motion-base);
+    max-width:calc(100vw - 32px);
+  }
+  .toast.show { opacity:1; visibility:visible; transition:opacity var(--motion-base) var(--ease-standard); }
+  .toast button { appearance:none; border:0; background:transparent; color:inherit; font-weight:800; text-decoration:underline; cursor:pointer; }
+
+  .foot { margin-top:36px; padding-top:14px; border-top:1px solid var(--border-subtle); color:var(--content-secondary); font-size:.62rem; max-width:88ch; }
+  .foot b { color:var(--content-primary); }
+
+  @media (max-width:820px) {
+    .split, .legal-grid { grid-template-columns:1fr; }
+    .consent-actions { grid-template-columns:1fr; }
+    .brand span { display:none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior:auto; }
+    *, *::before, *::after {
+      animation-duration:.001ms !important; animation-iteration-count:1 !important;
+      transition-duration:.001ms !important; transition-delay:0s !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="bar">
+  <div class="brand"><strong>MovieArena</strong><span>Phase 10 · content &amp; legal</span></div>
+  <span class="locked">Copy deck v0.2</span>
+  <div class="seg" role="group" aria-label="Theme mode">
+    <button data-mode="system">System</button>
+    <button data-mode="dark" class="on">Dark</button>
+    <button data-mode="light">Light</button>
+  </div>
+  <span class="resolved" id="resolved">dark</span>
+  <button class="toggle" id="voice-toggle" aria-pressed="true"><span class="dot"></span>Proposed copy</button>
+</header>
+
+<main class="wrap" id="main" tabindex="-1">
+
+  <section class="intro">
+    <div class="eyebrow">Phase 10 draft v0.2</div>
+    <h1>Say less. Mean it.</h1>
+    <p>One lexicon, one voice, one honest legal page. This preview is a working copy deck: compare current and proposed wording, filter the lexicon, walk the state matrix, open the destructive dialog, try the consent screen, and paste your own copy into the checker. Every claim is either true today or marked as not yet available. No hype, no blame, no dark patterns.</p>
+  </section>
+
+  <section class="block" id="voice">
+    <div class="block-head">
+      <h2>Voice, before and after</h2>
+      <p>Toggle “Proposed copy” in the header to switch every pair. The accent hue does not change; the claims do.</p>
+    </div>
+    <div class="copies">
+      <div class="copy">
+        <div class="copy-top"><b>Hero badge</b><span class="tag p1">rank claim</span></div>
+        <div class="old"><span class="label">Current</span><p>Trending №1</p></div>
+        <div class="new"><span class="label">Proposed</span><p>Featured</p></div>
+      </div>
+      <div class="copy">
+        <div class="copy-top"><b>Playback error</b><span class="tag p0">no cause</span></div>
+        <div class="old"><span class="label">Current</span><p>Something went wrong. Please try again.</p></div>
+        <div class="new"><span class="label">Proposed</span><p>This source didn't respond. Try again, or open the official source.</p></div>
+      </div>
+      <div class="copy">
+        <div class="copy-top"><b>Mobile More screen</b><span class="tag p0">false claim</span></div>
+        <div class="old"><span class="label">Current</span><p>No accounts, no ads, no analytics.</p></div>
+        <div class="new"><span class="label">Proposed</span><p>No accounts today. Official embeds may include their own ads.</p></div>
+      </div>
+      <div class="copy">
+        <div class="copy-top"><b>Legal, data section</b><span class="tag p0">permanent promise</span></div>
+        <div class="old"><span class="label">Current</span><p>There is no user database and no analytics.</p></div>
+        <div class="new"><span class="label">Proposed</span><p>As of 7 Nov 2026, your list, progress, and settings stay on this device. There is no account and no analytics.</p></div>
+      </div>
+      <div class="copy">
+        <div class="copy-top"><b>Empty search</b><span class="tag p2">dead end</span></div>
+        <div class="old"><span class="label">Current</span><p>No results.</p></div>
+        <div class="new"><span class="label">Proposed</span><p>No titles match “friren”. Try fewer words or a genre.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="lexicon">
+    <div class="block-head">
+      <h2>Lexicon</h2>
+      <p>One name per concept across web classic, web React, native, legal, and support. Filter the table as you draft.</p>
+    </div>
+    <div class="panel">
+      <div class="row" style="justify-content:space-between">
+        <input class="filter" id="lex-filter" type="search" placeholder="Filter concepts, names, or banned words…" aria-label="Filter the lexicon">
+        <span class="count" id="lex-count"></span>
+      </div>
+      <div class="table-wrap" style="margin-top:10px">
+        <table>
+          <thead><tr><th>Concept</th><th>Use</th><th>Do not use</th></tr></thead>
+          <tbody id="lex-rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="states">
+    <div class="block-head">
+      <h2>State matrix</h2>
+      <p>The only approved wording for loading, empty, error, and success. Native may shorten; it may not change the meaning.</p>
+    </div>
+    <div class="panel">
+      <div class="tabs" role="tablist" aria-label="State category">
+        <button role="tab" aria-selected="true" data-state="loading">Loading</button>
+        <button role="tab" aria-selected="false" data-state="empty">Empty</button>
+        <button role="tab" aria-selected="false" data-state="error">Error</button>
+        <button role="tab" aria-selected="false" data-state="success">Success</button>
+      </div>
+      <div class="tabpanel" data-panel="loading" style="margin-top:11px">
+        <div class="state-grid">
+          <div class="state-card"><b>Catalog</b><p>Loading titles…</p></div>
+          <div class="state-card"><b>My List</b><p>Loading your list…</p></div>
+          <div class="state-card"><b>Search</b><p>Searching…</p></div>
+          <div class="state-card"><b>Player source</b><p>Opening the source…</p></div>
+          <div class="state-card"><b>Subtitles</b><p>Loading subtitles…</p></div>
+          <div class="state-card"><b>Catalog refresh</b><p>Checking the official sources…</p></div>
+          <div class="state-card"><b>Account</b><p>Signing you in…</p></div>
+        </div>
+      </div>
+      <div class="tabpanel" data-panel="empty" style="margin-top:11px" hidden>
+        <div class="state-grid">
+          <div class="state-card"><b>No search results</b><p>No titles match “friren”. Try fewer words or a genre.</p></div>
+          <div class="state-card"><b>Empty My List</b><p>Your list is empty. Save a title to find it here.</p></div>
+          <div class="state-card"><b>No episodes in this audio</b><p>No episodes in this audio track yet.</p></div>
+          <div class="state-card"><b>No episode search results</b><p>No episodes match “12”.</p></div>
+          <div class="state-card"><b>No saved progress</b><p>Nothing to continue yet.</p></div>
+          <div class="state-card"><b>No titles in a filter</b><p>No titles in this filter.</p></div>
+          <div class="state-card"><b>No transcript</b><p>No transcript for this source.</p></div>
+        </div>
+      </div>
+      <div class="tabpanel" data-panel="error" style="margin-top:11px" hidden>
+        <div class="state-grid">
+          <div class="state-card"><b>Catalog failed</b><p>The catalog didn't load. Check your connection and try again.</p></div>
+          <div class="state-card"><b>Source failed</b><p>This source didn't respond. Try again, or open the official source.</p></div>
+          <div class="state-card"><b>Subtitle file unreadable</b><p>That subtitle file couldn't be read. Use a .srt or .vtt file.</p></div>
+          <div class="state-card"><b>Subtitle search failed</b><p>Subtitle search isn't responding right now. Try again in a moment.</p></div>
+          <div class="state-card"><b>Copy failed</b><p>Couldn't copy the link. Select it and copy it manually.</p></div>
+          <div class="state-card"><b>Offline</b><p>You're offline. Saved titles are still available.</p></div>
+          <div class="state-card"><b>Sign-in link expired</b><p>That link has expired. Send a new one.</p></div>
+          <div class="state-card"><b>Profile limit</b><p>This account already has four profiles. Remove one to add another.</p></div>
+        </div>
+      </div>
+      <div class="tabpanel" data-panel="success" style="margin-top:11px" hidden>
+        <div class="state-grid">
+          <div class="state-card"><b>Save</b><p>Saved to My List.</p></div>
+          <div class="state-card"><b>Remove</b><p>Removed from My List.</p></div>
+          <div class="state-card"><b>Copy</b><p>Link copied.</p></div>
+          <div class="state-card"><b>Sign out</b><p>Signed out.</p></div>
+          <div class="state-card"><b>Profile switch</b><p>Switched to {name}.</p></div>
+          <div class="state-card"><b>Ad personalisation</b><p>Ad personalisation is off.</p></div>
+          <div class="state-card"><b>Delete account</b><p>Your account is scheduled for deletion. You have 30 days to cancel.</p></div>
+        </div>
+      </div>
+      <p class="note" style="margin-top:11px">Success copy appears for 4 seconds, is announced once, and does not steal focus.</p>
+    </div>
+  </section>
+
+  <section class="block" id="destructive">
+    <div class="block-head">
+      <h2>Destructive confirmation</h2>
+      <p>Question title, consequence body, verb repeat, safe action focused. Undo follows the action.</p>
+    </div>
+    <div class="panel">
+      <div class="row">
+        <button class="btn primary" id="open-remove">Remove from My List</button>
+        <span class="note">This opens the exact dialog copy and focus behaviour.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="consent">
+    <div class="block-head">
+      <h2>Consent, without the trick</h2>
+      <p>Three equal actions. Nothing pre-ticked. Rejecting is one click. Choose opens the optional switches.</p>
+    </div>
+    <div class="panel">
+      <h3 style="font-size:1rem">Your privacy choices</h3>
+      <p class="note" style="margin-top:7px;max-width:66ch">We use essential storage to keep you signed in and remember this choice. Optional analytics help us find broken playback and improve the catalog. They are off unless you turn them on.</p>
+      <div class="consent-actions">
+        <button class="btn" data-consent="essential">Essential only</button>
+        <button class="btn" data-consent="choose" aria-expanded="false" aria-controls="consent-options">Choose</button>
+        <button class="btn primary" data-consent="optional">Accept optional</button>
+      </div>
+      <p class="note" id="consent-status" role="status" aria-live="polite" style="margin-top:10px">No choice yet. All optional settings are off.</p>
+      <div id="consent-options" hidden style="margin-top:6px">
+        <div class="switches">
+          <div class="switch-row">
+            <p><b>Help improve MovieArena</b><small>Sends anonymous playback and error events. No titles you watch are attached. Off by default.</small></p>
+            <button class="switch" role="switch" aria-checked="false" data-switch="analytics" aria-label="Optional analytics"></button>
+          </div>
+          <div class="switch-row">
+            <p><b>Use my activity to choose ads</b><small>Off by default. Ads still appear, but they are contextual.</small></p>
+            <button class="switch" role="switch" aria-checked="false" data-switch="ads" aria-label="Ad personalisation"></button>
+          </div>
+          <div class="switch-row">
+            <p><b>Send me catalog updates</b><small>No more than once a month.</small></p>
+            <button class="switch" role="switch" aria-checked="false" data-switch="email" aria-label="Marketing email"></button>
+          </div>
+        </div>
+      </div>
+      <p class="note" style="margin-top:10px">You can change this any time in Settings → Privacy.</p>
+    </div>
+  </section>
+
+  <section class="block" id="player">
+    <div class="block-head">
+      <h2>Player microcopy</h2>
+      <p>Product UI says “Subtitles”. Accessibility and legal text say “captions”. Shortcuts are written as a list.</p>
+    </div>
+    <div class="split">
+      <div class="panel">
+        <div class="player-strip">
+          <div class="row" style="justify-content:space-between">
+            <span>12:34 / 24:10</span>
+            <span>Subtitles on</span>
+          </div>
+          <div class="progress" aria-hidden="true"><span></span></div>
+          <div class="row" style="justify-content:space-between">
+            <span class="media-btn" aria-hidden="true">▶</span>
+            <span class="media-btn" aria-hidden="true">↺10</span>
+            <span class="media-btn" aria-hidden="true">↻10</span>
+            <span style="flex:1"></span>
+            <span class="media-btn" aria-hidden="true">CC</span>
+            <span class="media-btn" aria-hidden="true">⚙</span>
+            <span class="media-btn" aria-hidden="true">⛶</span>
+          </div>
+        </div>
+        <p class="note" style="margin-top:9px">Labels: <b>Play</b>, <b>Pause</b>, <b>Back 10 seconds</b>, <b>Forward 10 seconds</b>, <b>Mute</b>, <b>Subtitles</b>, <b>Quality: Auto</b>, <b>Speed: 1×</b>, <b>Settings</b>, <b>Theater mode</b>, <b>Fullscreen</b>.</p>
+      </div>
+      <div class="panel stack">
+        <h3 style="font-size:.68rem;font-weight:750;letter-spacing:.09em;text-transform:uppercase;color:var(--content-secondary)">Playback feedback</h3>
+        <p class="note"><b>Buffering…</b> not “Loading”.</p>
+        <p class="note"><b>Subtitles on</b> / <b>Subtitles off</b>.</p>
+        <p class="note"><b>Up next: Episode 13</b> — cancellable for 8 seconds.</p>
+        <p class="note"><b>This source didn't respond.</b> Try again, or open the official source.</p>
+        <p class="note"><span class="kbd">Space</span> play · <span class="kbd">J</span>/<span class="kbd">←</span> back 10s · <span class="kbd">L</span>/<span class="kbd">→</span> forward 10s · <span class="kbd">C</span> subtitles · <span class="kbd">M</span> mute · <span class="kbd">F</span> fullscreen</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="ads-kids">
+    <div class="block-head">
+      <h2>Ads and Kids</h2>
+      <p>An ad is labelled in text, never by colour alone. Kids copy stays simple and makes no promise the embeds cannot keep.</p>
+    </div>
+    <div class="split">
+      <div class="panel">
+        <div class="ad-card">
+          <div class="ad-top"><b>Ad</b><span>· 0:15</span><span style="flex:1"></span><span>Why this ad?</span></div>
+          <div class="ad-body">A labelled ad slot. The film's title styling is never used here.</div>
+          <div class="ad-top" style="border-top:1px solid var(--border-subtle)"><span>Mute ad</span><span style="flex:1"></span><span>Skip ad · 0:05</span></div>
+        </div>
+        <p class="note" style="margin-top:9px"><b>Contextual:</b> “This ad is based on the title you're watching, not your history.” <b>Personalised:</b> “This ad uses your ad personalisation setting. Change it in Settings → Privacy.”</p>
+      </div>
+      <div class="panel">
+        <div class="kids-card">
+          <h3>Pick a cartoon</h3>
+          <p>Simple words. Big buttons. No account upsell inside playback.</p>
+          <div class="kids-actions">
+            <button class="btn">Cartoons</button>
+            <button class="btn">Films</button>
+            <button class="btn">Shows</button>
+          </div>
+          <p style="margin-top:10px">Nothing here yet. Ask a grown-up to add something.</p>
+        </div>
+        <p class="note" style="margin-top:9px"><b>Exit Kids</b> → “Ask a grown-up for the PIN.” Do not say “No ads” until Kids is restricted to ad-free sources.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="legal">
+    <div class="block-head">
+      <h2>Legal rewrite</h2>
+      <p>The current page is not one lie; it is several half-truths that contradict each other and the code. Replace it with dated statements and a launch addendum.</p>
+    </div>
+    <div class="legal-grid">
+      <div class="legal-col before">
+        <h3>Current legal.html</h3>
+        <ul>
+          <li>“Every stream … is delivered by YouTube.”<span class="why">Contradicted later on the same page by the Archive direct-file paragraph.</span></li>
+          <li>“There is no user database and no analytics.”<span class="why">Written as a permanent promise; will be false when accounts ship.</span></li>
+          <li>“No streams … proxied.”<span class="why">Unqualified; the Archive relay is a proxy for public-domain files, and the code ships a ToS-gray playback proxy.</span></li>
+          <li>“Remove the show's entry from shows-data.js …”<span class="why">Not a contact path for a public site.</span></li>
+          <li>“taking the source down takes the entire site down”<span class="why">Overstated; the catalog entry can be removed independently.</span></li>
+        </ul>
+      </div>
+      <div class="legal-col after">
+        <h3>Proposed current-state text</h3>
+        <ul>
+          <li>Official anime and donghua play through the rights-holder's own YouTube embed. The embed may show the rights-holder's ads.</li>
+          <li>Public-domain films play as direct files through MovieArena's range-aware relay. The relay only fetches files the source serves publicly.</li>
+          <li>MovieArena does not host, rip, re-upload, or proxy licensed video, and does not bypass DRM.</li>
+          <li>As of 7 Nov 2026, your list, progress, and settings stay on this device. There is no account and no analytics.</li>
+          <li>When accounts and optional analytics launch, this page lists the data, purpose, retention, processors, and deletion path before those features are enabled.</li>
+          <li>Rights-holder requests go to a contact address, with a response target. The catalog entry can be removed without touching the source.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:12px">
+      <h3 style="font-size:.72rem;font-weight:750;letter-spacing:.08em;text-transform:uppercase;color:var(--content-secondary);margin-bottom:7px">Launch addendum — a release blocker</h3>
+      <p class="note">Accounts, profiles, optional analytics, ads, a third-party caption service, operator-curated links, payments, and push/email each require their own legal section in the same release. A release checklist item blocks the feature if the section is missing.</p>
+    </div>
+  </section>
+
+  <section class="block" id="audit">
+    <div class="block-head">
+      <h2>Claims audit</h2>
+      <p>Twenty-three findings against the shipped files. P0 blocks launch, P1 blocks the phase, P2 is polish. Filter to see what must change before the gate.</p>
+    </div>
+    <div class="panel">
+      <div class="row" style="justify-content:space-between">
+        <div class="tabs" role="group" aria-label="Filter by severity">
+          <button data-sev="all" aria-pressed="true">All</button>
+          <button data-sev="P0" aria-pressed="false">P0</button>
+          <button data-sev="P1" aria-pressed="false">P1</button>
+          <button data-sev="P2" aria-pressed="false">P2</button>
+        </div>
+        <span class="count" id="audit-count"></span>
+      </div>
+      <div class="table-wrap" style="margin-top:10px">
+        <table>
+          <thead><tr><th>#</th><th>Location</th><th>Current claim</th><th>Status</th><th>Sev</th><th>Required change</th></tr></thead>
+          <tbody id="audit-rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="checker">
+    <div class="block-head">
+      <h2>Copy checker</h2>
+      <p>Paste a string. The checker flags banned patterns, not meaning. A clean result still needs a truth check.</p>
+    </div>
+    <div class="panel">
+      <label for="check-input" class="note" style="display:block;margin-bottom:6px"><b>Copy to check</b></label>
+      <textarea class="checker-input" id="check-input" placeholder="Something went wrong. Please try again!">Something went wrong. Please try again!</textarea>
+      <div class="row" style="margin-top:9px">
+        <button class="btn primary" id="check-btn">Check copy</button>
+        <button class="btn" id="check-clear">Clear</button>
+        <span class="count" id="check-count"></span>
+      </div>
+      <div class="results" id="check-results" role="status" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <p class="foot"><b>Preview only.</b> This page is a copy and legal decision aid, not the production stylesheet. The full voice guide, lexicon, state matrix, legal text, 23-item claims audit, and 17 gate decisions are in <code>docs/design/phase-10-content-legal.md</code>. The audit is a source review; it is not a claim of completed user testing.</p>
+</main>
+
+<div class="scrim" id="scrim" role="presentation">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" aria-describedby="sheet-body" tabindex="-1" id="sheet">
+    <div class="sheet-head">
+      <h3 id="sheet-title">Remove from My List?</h3>
+      <button class="icon-btn" id="close-sheet" aria-label="Close dialog">×</button>
+    </div>
+    <div class="sheet-body" id="sheet-body">Frieren: Beyond Journey's End will be removed from this profile. Your watch progress is kept.</div>
+    <div class="sheet-foot">
+      <button class="btn" id="cancel-sheet">Cancel</button>
+      <button class="btn primary" id="confirm-sheet">Remove</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <span id="toast-text">Removed from My List.</span>
+  <button id="toast-undo">Undo</button>
+</div>
+
+<script>
+  const root = document.documentElement;
+  const reduceMQ = matchMedia('(prefers-reduced-motion: reduce)');
+  const mq = matchMedia('(prefers-color-scheme: dark)');
+  const THEME_KEY = 'ma.preview10.theme';
+
+  /* ---------- theme ---------- */
+  const resolvedEl = document.getElementById('resolved');
+  const modeButtons = [...document.querySelectorAll('[data-mode]')];
+  function readMode() { try { return localStorage.getItem(THEME_KEY) || 'system'; } catch (_) { return 'system'; } }
+  function resolvedTheme(mode) { return mode === 'system' ? (mq.matches ? 'dark' : 'light') : mode; }
+  function applyMode(mode, animate) {
+    const theme = resolvedTheme(mode);
+    if (animate && !reduceMQ.matches) {
+      root.classList.add('switching');
+      setTimeout(() => root.classList.remove('switching'), 190);
+    }
+    root.dataset.theme = theme;
+    root.style.colorScheme = theme;
+    try { localStorage.setItem(THEME_KEY, mode); } catch (_) {}
+    modeButtons.forEach(b => {
+      const on = b.dataset.mode === mode;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
+    });
+    resolvedEl.textContent = mode === 'system' ? 'system → ' + theme : theme;
+  }
+  modeButtons.forEach(b => b.addEventListener('click', () => applyMode(b.dataset.mode, true)));
+  mq.addEventListener('change', () => { if (readMode() === 'system') applyMode('system', false); });
+
+  /* ---------- voice toggle ---------- */
+  const voiceBtn = document.getElementById('voice-toggle');
+  let proposed = true;
+  voiceBtn.addEventListener('click', () => {
+    proposed = !proposed;
+    root.dataset.voice = proposed ? 'proposed' : 'current';
+    voiceBtn.setAttribute('aria-pressed', String(proposed));
+    voiceBtn.lastChild.textContent = proposed ? 'Proposed copy' : 'Current copy';
+  });
+
+  /* ---------- lexicon ---------- */
+  const LEX = [
+    ['The product', 'MovieArena', 'Movie Arena, MovieArena™, the Arena'],
+    ['A show or film', 'title', 'content, asset, product'],
+    ['A single playable item', 'episode; film for a feature', 'video, item, media'],
+    ['A collection of episodes', 'series', 'show (user-facing), season unless metadata says so'],
+    ['The place a stream comes from', 'source', 'provider (internal only), host, mirror'],
+    ['The official YouTube channel', 'channel', 'uploader, publisher'],
+    ['Saved titles', 'My List', 'Favorites, Watchlist, Bookmarks'],
+    ['In-progress playback', 'Continue watching', 'Keep watching, Resume watching'],
+    ['Start from saved position', 'Resume', 'Continue as a button, Play from start'],
+    ['Start from the beginning', 'Play', 'Watch now, Stream now'],
+    ['Same-language text', 'Subtitles (product); captions (a11y/legal)', 'Closed captions as a product label'],
+    ['Translated text', 'Subtitles', 'Subs except compact metadata'],
+    ['Audio language', 'Audio', 'Dub track unless the track is a dub'],
+    ['Text alternative panel', 'Transcript', 'CC list, subtitle list'],
+    ['Picture quality', 'Quality', 'Resolution unless a number'],
+    ['Playback speed', 'Speed', 'Rate'],
+    ['Sign-in state', 'Sign in / Sign out', 'Log in, Log out'],
+    ['Account holder', 'Account', 'User, member'],
+    ['Household member', 'Profile', 'User, sub-account'],
+    ['Child profile', 'Kids profile', 'Child account, kid mode'],
+    ['Free, no payment', 'Free', 'Free-to-play, unlocked'],
+    ['Public-domain film', 'Public-domain film', 'PD film, archive movie'],
+    ['Optional data collection', 'Optional analytics', 'Telemetry (internal), tracking'],
+    ['Advertising', 'Ad', 'Advertisement except legal, promo'],
+    ['Sponsored placement', 'Sponsored', 'Partner content']
+  ];
+  const lexRows = document.getElementById('lex-rows');
+  const lexFilter = document.getElementById('lex-filter');
+  const lexCount = document.getElementById('lex-count');
+  function renderLex() {
+    const q = lexFilter.value.trim().toLowerCase();
+    const hits = LEX.filter(([c, u, d]) => !q || (c + ' ' + u + ' ' + d).toLowerCase().includes(q));
+    lexRows.innerHTML = hits.map(([c, u, d]) =>
+      '<tr><td>' + c + '</td><td><b>' + u + '</b></td><td class="note">' + d + '</td></tr>'
+    ).join('');
+    lexCount.textContent = hits.length + ' of ' + LEX.length + ' concepts';
+  }
+  lexFilter.addEventListener('input', renderLex);
+  renderLex();
+
+  /* ---------- state tabs ---------- */
+  const stateTabs = [...document.querySelectorAll('[data-state]')];
+  const statePanels = [...document.querySelectorAll('[data-panel]')];
+  stateTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      stateTabs.forEach(t => t.setAttribute('aria-selected', String(t === tab)));
+      statePanels.forEach(p => { p.hidden = p.dataset.panel !== tab.dataset.state; });
+    });
+  });
+
+  /* ---------- claims audit ---------- */
+  const AUDIT = [
+    [1, 'legal.html', '“There is no user database and no analytics.”', 'True today, unsafe as a permanent promise', 'P0', 'Dated current-state statement + launch addendum'],
+    [2, 'legal.html', '“Every stream … is delivered by YouTube.”', 'Contradicted later on the same page; false for Archive films', 'P0', 'Split the two delivery paths'],
+    [3, 'legal.html', '“No streams … proxied from MovieBox/123Movies-class aggregators.”', 'True as narrowly written, but the Archive relay is never qualified', 'P0', 'Say “no licensed video is proxied”; explain the relay'],
+    [4, 'legal.html', 'scripts/scrape-shows.js', 'Wrong extension', 'P2', 'scripts/scrape-shows.mjs'],
+    [5, 'legal.html', '“taking the source down takes the entire site down”', 'Overstated', 'P1', '“The catalog entry can be removed.”'],
+    [6, 'legal.html', 'Rights-holder edit instructions', 'Not a contact path for a public site', 'P0', 'Add a contact address and response target'],
+    [7, 'MoreScreen.jsx', '“No accounts, no ads, no analytics”', '“No ads” is already false', 'P0', '“No accounts today. Official embeds may include their own ads.”'],
+    [8, 'App.jsx', 'Comment: “no accounts, no analytics”', 'Internal, but misleading', 'P2', '“Local-only today; accounts and telemetry are planned behind consent.”'],
+    [9, 'common.js footer', '“embedded free, ad-supported uploads”', 'Accurate', '—', 'Keep'],
+    [10, 'about.html', '“no re-hosting, no proxies”', 'Unqualified claim is false for the public-domain relay', 'P0', '“No re-hosting of licensed video; public-domain files use our relay.”'],
+    [11, 'about.html', 'Subtitles on YouTube embed cannot draw over the player', 'Accurate', '—', 'Keep'],
+    [12, 'index.html hero', '“Trending №1”', 'Implies measured rank without a stated basis', 'P1', 'Define the metric or use “Featured”'],
+    [13, 'React hero', '“Trending №1”', 'Same', 'P1', 'Use “Featured” until a metric is defined'],
+    [14, 'Player', '“Subtitles” vs “Captions”', 'Inconsistent with Phase 9', 'P1', '“Subtitles” in product UI; “captions” in accessibility/legal text'],
+    [15, 'Player', '“Clip & share…”', 'Ellipsis is correct (opens a panel)', '—', 'Keep'],
+    [16, 'Watch page', '“FREE · Official” badge', 'Accurate for channel embeds, wrong for Archive films', 'P1', 'Source-aware badge: “Free · Public domain” for Archive'],
+    [17, 'watch.html source note', 'Names Anime Made By Bilibili on every title', 'Wrong on Archive film pages', 'P1', 'Render the note from the actual source'],
+    [18, 'watch.html + watch.js', '“Proxy: Off” + Invidious playback path', 'Code calls it “ToS-gray for YouTube”; contradicts policy', 'P0', 'Remove the control and the playback path'],
+    [19, 'subs.js', 'Third-party Invidious caption fetch', 'Undisclosed intermediary', 'P1', 'Prefer the official endpoint; otherwise disclose text-only retrieval'],
+    [20, 'mobile data.js', 'Comment: “No accounts, no analytics”', 'Internal, but will age badly', 'P2', '“Local-only today; accounts and telemetry are planned behind consent.”'],
+    [21, 'HomeScreen.jsx', '“Search 1,200+ titles”', 'Hard-coded count drifts from the catalog', 'P2', '“Search titles” or a live count'],
+    [22, 'Hero CTAs', '“Watch now”', 'Inconsistent with the lexicon’s “Watch” and “Play”', 'P2', '“Watch” on cards and hero; “Play” on the Watch page'],
+    [23, 'Kids helper', '“No ads”', 'Not guaranteed while Kids titles can use YouTube embeds', 'P0', 'Remove the promise until Kids is restricted to ad-free sources']
+  ];
+  const auditRows = document.getElementById('audit-rows');
+  const auditCount = document.getElementById('audit-count');
+  const sevButtons = [...document.querySelectorAll('[data-sev]')];
+  let sev = 'all';
+  function sevTag(s) {
+    if (s === '—') return '<span class="tag ok">Keep</span>';
+    return '<span class="tag ' + s.toLowerCase() + '">' + s + '</span>';
+  }
+  function renderAudit() {
+    const hits = AUDIT.filter(r => sev === 'all' || r[4] === sev);
+    auditRows.innerHTML = hits.map(r =>
+      '<tr><td class="num">' + r[0] + '</td><td class="loc">' + r[1] + '</td><td class="claim">' + r[2] + '</td><td class="note">' + r[3] + '</td><td>' + sevTag(r[4]) + '</td><td class="fix">' + r[5] + '</td></tr>'
+    ).join('');
+    auditCount.textContent = hits.length + ' of ' + AUDIT.length + ' findings';
+  }
+  sevButtons.forEach(b => b.addEventListener('click', () => {
+    sev = b.dataset.sev;
+    sevButtons.forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    renderAudit();
+  }));
+  renderAudit();
+
+  /* ---------- dialog ---------- */
+  const scrim = document.getElementById('scrim');
+  const sheet = document.getElementById('sheet');
+  let lastFocus = null;
+  function openSheet(trigger) {
+    lastFocus = trigger || document.activeElement;
+    scrim.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('cancel-sheet').focus();
+  }
+  function closeSheet() {
+    if (!scrim.classList.contains('open')) return;
+    scrim.classList.remove('open');
+    document.body.style.overflow = '';
+    if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
+  }
+  document.getElementById('open-remove').addEventListener('click', e => openSheet(e.currentTarget));
+  document.getElementById('close-sheet').addEventListener('click', closeSheet);
+  document.getElementById('cancel-sheet').addEventListener('click', closeSheet);
+  document.getElementById('confirm-sheet').addEventListener('click', () => {
+    closeSheet();
+    showToast('Removed from My List.');
+  });
+  scrim.addEventListener('click', e => { if (e.target === scrim) closeSheet(); });
+  document.addEventListener('keydown', e => {
+    if (!scrim.classList.contains('open')) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeSheet(); return; }
+    if (e.key !== 'Tab') return;
+    const focusables = [...sheet.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])')]
+      .filter(el => !el.disabled && el.offsetParent !== null);
+    if (!focusables.length) return;
+    const first = focusables[0];
+    const lastEl = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); lastEl.focus(); }
+    else if (!e.shiftKey && document.activeElement === lastEl) { e.preventDefault(); first.focus(); }
+  });
+
+  /* ---------- toast ---------- */
+  const toast = document.getElementById('toast');
+  const toastText = document.getElementById('toast-text');
+  let toastTimer = null;
+  function showToast(message) {
+    toastText.textContent = message;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 4000);
+  }
+  document.getElementById('toast-undo').addEventListener('click', () => {
+    toast.classList.remove('show');
+    showToast('Restored to My List.');
+  });
+
+  /* ---------- consent ---------- */
+  const consentStatus = document.getElementById('consent-status');
+  const consentOptions = document.getElementById('consent-options');
+  const consentButtons = [...document.querySelectorAll('[data-consent]')];
+  let consentChoice = null;
+  consentButtons.forEach(b => {
+    b.addEventListener('click', () => {
+      consentChoice = b.dataset.consent;
+      consentButtons.forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      if (consentChoice === 'choose') {
+        const open = consentOptions.hidden;
+        consentOptions.hidden = !open;
+        b.setAttribute('aria-expanded', String(open));
+        consentStatus.textContent = open ? 'Choose what is on. Everything starts off.' : 'Optional settings hidden. Your current choice is unchanged.';
+      } else if (consentChoice === 'essential') {
+        consentOptions.hidden = true;
+        b.setAttribute('aria-expanded', 'false');
+        document.querySelectorAll('[data-switch]').forEach(s => s.setAttribute('aria-checked', 'false'));
+        consentStatus.textContent = 'Essential storage only. Optional analytics, ad personalisation, and email are off.';
+      } else {
+        consentOptions.hidden = true;
+        b.setAttribute('aria-expanded', 'false');
+        document.querySelectorAll('[data-switch]').forEach(s => s.setAttribute('aria-checked', 'true'));
+        consentStatus.textContent = 'Optional analytics, ad personalisation, and email are on. You can change this later.';
+      }
+    });
+  });
+  document.querySelectorAll('[data-switch]').forEach(s => {
+    s.addEventListener('click', () => {
+      const on = s.getAttribute('aria-checked') !== 'true';
+      s.setAttribute('aria-checked', String(on));
+      consentStatus.textContent = on
+        ? 'This option is on. The other options are unchanged.'
+        : 'This option is off. The other options are unchanged.';
+    });
+  });
+
+  /* ---------- copy checker ---------- */
+  const checkInput = document.getElementById('check-input');
+  const checkResults = document.getElementById('check-results');
+  const checkCount = document.getElementById('check-count');
+  const RULES = [
+    { re: /!/g, label: 'Exclamation mark', text: 'Product copy has no exclamation marks, including errors.' },
+    { re: /\b(oops|whoops)\b/gi, label: '“Oops”', text: 'Name the failure instead of performing surprise.' },
+    { re: /\b(simply|just|obviously|easy)\b/gi, label: 'Blame word', text: '“Simply”, “just”, “obviously”, and “easy” blame the reader.' },
+    { re: /\bclick here\b/gi, label: '“Click here”', text: 'Link text must make sense out of context.' },
+    { re: /\bunknown error\b/gi, label: '“Unknown error”', text: 'If the cause is unknown, say “Playback stopped. Try again.”' },
+    { re: /\bsomething went wrong\b/gi, label: '“Something went wrong”', text: 'Name the object, the failure, and the next step.' },
+    { re: /\b(login|log in|logout|log out)\b/gi, label: 'Sign-in term', text: 'Use “Sign in” and “Sign out”.' },
+    { re: /\bplease\b/gi, label: '“Please”', text: 'Reserved for consent and legal requests, not errors or product UI.' },
+    { re: /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, label: 'Emoji', text: 'No emoji in product copy. Icons carry the tone.' },
+    { re: /\bwatch now\b/gi, label: '“Watch now”', text: 'Use “Watch” on cards and hero; “Play” on the Watch page.' },
+    { re: /\btrending\b/gi, label: '“Trending”', text: 'Use “Featured” until a ranking metric is defined.' },
+    { re: /\bno ads\b/gi, label: '“No ads”', text: 'Official embeds can carry ads. Qualify the claim or remove it.' },
+    { re: /\bno proxies\b/gi, label: '“No proxies”', text: 'Qualify it: “no licensed video is proxied”. Public-domain files use a relay.' },
+    { re: /\b1,?200\+\b/g, label: 'Hard-coded count', text: 'Use a live count or “Search titles”.' }
+  ];
+  function checkCopy() {
+    const text = checkInput.value;
+    const found = [];
+    RULES.forEach(rule => {
+      const matches = text.match(rule.re);
+      if (matches && matches.length) found.push({ label: rule.label, text: rule.text, count: matches.length });
+    });
+    checkResults.innerHTML = found.length
+      ? found.map(f => '<div class="result"><b>' + f.label + '</b> · ' + f.count + '× — ' + f.text + '</div>').join('')
+      : '<div class="result ok"><b>No banned patterns found.</b> Still check that the claim is true today.</div>';
+    checkCount.textContent = found.length ? found.length + ' pattern' + (found.length === 1 ? '' : 's') + ' found' : 'clean';
+  }
+  document.getElementById('check-btn').addEventListener('click', checkCopy);
+  document.getElementById('check-clear').addEventListener('click', () => {
+    checkInput.value = '';
+    checkResults.innerHTML = '';
+    checkCount.textContent = '';
+    checkInput.focus();
+  });
+  checkCopy();
+
+  /* ---------- init ---------- */
+  applyMode(readMode(), false);
+</script>
+</body>
+</html>

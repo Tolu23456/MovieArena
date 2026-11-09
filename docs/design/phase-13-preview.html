@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Phase 13 — Performance and resilience · MovieArena</title>
+<style>
+  :root {
+    --n0:#ffffff; --n50:#f6f7f9; --n75:#f2f4f7; --n100:#eef1f5; --n150:#e1e5ec;
+    --n200:#c6cdd9; --n300:#9aa3b2; --n400:#828d9d; --n500:#6f7a8c; --n600:#646e7c;
+    --n700:#5c6472; --n750:#4a5362; --n800:#3c4554; --n850:#282e38; --n900:#1b2029;
+    --n925:#161a21; --n950:#12151b; --n1000:#0c0e12; --n1100:#07080b;
+    --a50:#fff1ee; --a100:#ffe0da; --a200:#ffc4b8; --a300:#ff9f8e; --a400:#ff7a62;
+    --a500:#ff5c47; --a600:#e84632; --a700:#c0341f; --a800:#972817;
+    --w300:#ffb066; --w400:#ff8a3d; --w500:#e87325;
+    --s300:#8fcfa5; --s700:#2f6b3a; --wn300:#e8c37a; --wn700:#8a5a12;
+    --d300:#ff9a8f; --d700:#b3261e; --i300:#9db8ff; --i700:#2f5bb7;
+    --radius:14px; --radius-sm:9px;
+    --font:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans",Ubuntu,Cantarell,"Helvetica Neue",sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+    --motion:160ms;
+  }
+  :root, [data-theme="dark"] {
+    color-scheme:dark;
+    --page:var(--n1000); --sunken:var(--n950); --card:var(--n925); --raised:var(--n900);
+    --border:var(--n850); --border-control:var(--n600); --border-strong:var(--n500);
+    --ink:var(--n100); --ink-2:var(--n300); --ink-3:var(--n400);
+    --action:var(--a500); --action-hover:var(--a400); --action-ink:var(--n1000);
+    --soft:rgba(255,92,71,.16); --softer:rgba(255,92,71,.07);
+    --link:var(--w400); --focus:var(--w400);
+    --ok:var(--s300); --warn:var(--wn300); --danger:var(--d300); --info:var(--i300);
+    --code-bg:var(--n1100); --hairline:rgba(255,255,255,.06);
+    --track:var(--n900);
+  }
+  [data-theme="light"] {
+    color-scheme:light;
+    --page:var(--n50); --sunken:var(--n100); --card:var(--n0); --raised:var(--n75);
+    --border:var(--n150); --border-control:var(--n500); --border-strong:var(--n600);
+    --ink:var(--n950); --ink-2:var(--n700); --ink-3:var(--n600);
+    --action:var(--a500); --action-hover:var(--a600); --action-ink:var(--n950);
+    --soft:rgba(255,92,71,.12); --softer:rgba(255,92,71,.06);
+    --link:var(--a700); --focus:var(--a700);
+    --ok:var(--s700); --warn:var(--wn700); --danger:var(--d700); --info:var(--i700);
+    --code-bg:var(--n100); --hairline:rgba(18,21,27,.08);
+    --track:var(--n150);
+  }
+  * { box-sizing:border-box; }
+  html { background:var(--page); }
+  body { margin:0; background:var(--page); color:var(--ink); font:15px/1.55 var(--font); -webkit-font-smoothing:antialiased; }
+  ::selection { background:var(--soft); color:var(--ink); }
+  a { color:var(--link); text-underline-offset:3px; }
+  button, input { font:inherit; color:inherit; }
+  button { cursor:pointer; }
+  :focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
+  [hidden] { display:none !important; }
+  .skip {
+    position:absolute; left:16px; top:-60px; z-index:10; padding:10px 14px;
+    background:var(--action); color:var(--action-ink); border-radius:var(--radius-sm);
+    font-weight:800; text-decoration:none;
+  }
+  .skip:focus { top:16px; }
+  .wrap { max-width:1360px; margin:0 auto; padding:26px 22px 64px; }
+
+  .topbar { display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding-bottom:20px; border-bottom:1px solid var(--border); }
+  .brand { display:flex; align-items:center; gap:11px; margin-right:auto; min-width:0; }
+  .mark {
+    width:38px; height:38px; border-radius:11px; background:var(--action); color:var(--action-ink);
+    display:grid; place-items:center; font-weight:900; font-size:15px; letter-spacing:-.5px; flex:none;
+  }
+  .brand b { display:block; font-size:15px; letter-spacing:.2px; }
+  .brand span { display:block; font-size:11px; color:var(--ink-2); letter-spacing:.5px; text-transform:uppercase; font-weight:700; }
+  .seg { display:inline-flex; border:1px solid var(--border-control); border-radius:999px; padding:3px; gap:2px; background:var(--sunken); }
+  .seg button {
+    appearance:none; border:0; background:transparent; color:var(--ink-2);
+    padding:7px 12px; border-radius:999px; font-size:12px; font-weight:700; min-height:34px;
+    transition:background var(--motion), color var(--motion);
+  }
+  .seg button[aria-pressed="true"] { background:var(--card); color:var(--ink); border:1px solid var(--border); }
+  .status-pill {
+    display:inline-flex; align-items:center; gap:7px; padding:7px 12px; border-radius:999px;
+    border:1px solid var(--border); background:var(--card); font-size:12px; font-weight:700; color:var(--ink-2);
+  }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--warn); flex:none; }
+
+  header.hero { padding:40px 0 26px; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:26px; align-items:end; }
+  .eyebrow { margin:0 0 10px; color:var(--link); font-size:12px; font-weight:800; letter-spacing:1.4px; text-transform:uppercase; }
+  h1 { margin:0; font-size:clamp(32px,5vw,58px); line-height:1.02; letter-spacing:-1.6px; font-weight:850; }
+  .lede { margin:16px 0 0; max-width:68ch; color:var(--ink-2); font-size:16px; }
+  .lede b { color:var(--ink); }
+  .stamp { text-align:right; color:var(--ink-2); font-size:12px; line-height:1.7; }
+  .stamp b { display:block; color:var(--ink); font-size:13px; }
+
+  .stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:10px 0 24px; }
+  .stat { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:18px 18px 16px; }
+  .stat .k { display:block; font-size:clamp(26px,3.3vw,38px); font-weight:850; letter-spacing:-1.2px; line-height:1; font-variant-numeric:tabular-nums; }
+  .stat .l { display:block; margin-top:8px; color:var(--ink-2); font-size:12px; font-weight:700; letter-spacing:.3px; }
+  .stat .sub { display:block; margin-top:3px; color:var(--ink-3); font-size:11px; }
+  .stat.good .k { color:var(--ok); }
+  .stat.bad .k { color:var(--danger); }
+  .stat.warn .k { color:var(--warn); }
+
+  .layout { display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:18px; align-items:start; }
+  .col { display:grid; gap:18px; min-width:0; }
+  .panel { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+  .panel-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:15px 18px; border-bottom:1px solid var(--border); }
+  .panel-head h2 { margin:0; font-size:14px; letter-spacing:.2px; }
+  .panel-head .count { margin-left:auto; color:var(--ink-3); font-size:12px; font-weight:750; font-variant-numeric:tabular-nums; }
+  .panel-body { padding:16px 18px; }
+  .rule { width:26px; height:2px; background:var(--action); border-radius:2px; flex:none; }
+  .subnote { margin:0; color:var(--ink-3); font-size:11.5px; line-height:1.5; }
+
+  .chips { display:flex; gap:6px; flex-wrap:wrap; }
+  .chip {
+    appearance:none; border:1px solid var(--border); background:var(--card); color:var(--ink-2);
+    border-radius:999px; padding:7px 11px; font-size:11.5px; font-weight:750; min-height:34px;
+    transition:background var(--motion), color var(--motion), border-color var(--motion);
+  }
+  .chip[aria-pressed="true"] { background:var(--soft); border-color:var(--action); color:var(--ink); }
+  .chip .n { font-variant-numeric:tabular-nums; opacity:.8; margin-left:4px; }
+
+  .bar-list { display:grid; gap:10px; }
+  .bar-row { display:grid; grid-template-columns:1fr auto; gap:3px 12px; align-items:baseline; }
+  .bar-row .name { font-size:12.5px; font-weight:750; }
+  .bar-row .val { font-size:11.5px; color:var(--ink-2); font-variant-numeric:tabular-nums; }
+  .bar-row .track { grid-column:1 / -1; height:9px; border-radius:5px; background:var(--track); border:1px solid var(--border); overflow:hidden; }
+  .bar-row .fill { display:block; height:100%; background:var(--action); border-radius:4px; transition:width var(--motion); }
+  .bar-row .fill.ok { background:var(--ok); }
+  .bar-row .fill.bad { background:var(--danger); }
+  .bar-row .fill.unv { background:transparent; border:1px dashed var(--border-strong); }
+  .bar-row .note { grid-column:1 / -1; color:var(--ink-3); font-size:10.5px; }
+
+  .toggle { display:inline-flex; border:1px solid var(--border-control); border-radius:999px; padding:3px; gap:2px; background:var(--sunken); }
+  .toggle button {
+    appearance:none; border:0; background:transparent; color:var(--ink-2);
+    padding:6px 11px; border-radius:999px; font-size:11.5px; font-weight:700; min-height:32px;
+    transition:background var(--motion), color var(--motion);
+  }
+  .toggle button[aria-pressed="true"] { background:var(--card); color:var(--ink); border:1px solid var(--border); }
+
+  .budgets { display:grid; gap:8px; }
+  .budget {
+    border:1px solid var(--border); border-radius:10px; background:var(--sunken);
+    padding:11px 13px; display:grid; grid-template-columns:44px minmax(0,1fr) 150px 88px; gap:10px; align-items:center;
+  }
+  .budget .bid { font-family:var(--mono); font-size:11px; color:var(--ink-3); }
+  .budget .blabel { font-size:12.5px; font-weight:750; min-width:0; }
+  .budget .bmeta { display:block; color:var(--ink-3); font-size:10.5px; font-weight:600; margin-top:2px; }
+  .budget .btrack { height:8px; border-radius:4px; background:var(--track); border:1px solid var(--border); overflow:hidden; }
+  .budget .bfill { display:block; height:100%; background:var(--action); }
+  .budget .bfill.ok { background:var(--ok); }
+  .budget .bfill.bad { background:var(--danger); }
+  .budget .bfill.unv { background:transparent; border:1px dashed var(--border-strong); }
+  .v { justify-self:start; font-size:10px; font-weight:850; letter-spacing:.6px; padding:4px 7px; border-radius:5px; border:1px solid currentColor; white-space:nowrap; }
+  .v.pass { color:var(--ok); }
+  .v.fail { color:var(--danger); }
+  .v.unv { color:var(--warn); }
+  .v.part { color:var(--warn); }
+
+  .assets { width:100%; border-collapse:collapse; font-size:12px; }
+  .assets th, .assets td { text-align:left; padding:8px 6px; border-bottom:1px solid var(--hairline); vertical-align:middle; }
+  .assets th { color:var(--ink-3); font-size:10px; text-transform:uppercase; letter-spacing:.7px; }
+  .assets td.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .assets td.file { font-family:var(--mono); font-size:11px; }
+  .assets tr:last-child td { border-bottom:0; }
+  .mini { height:6px; border-radius:3px; background:var(--track); border:1px solid var(--border); overflow:hidden; min-width:64px; }
+  .mini span { display:block; height:100%; background:var(--info); }
+
+  .cache { display:grid; gap:8px; }
+  .cache-row { border:1px solid var(--border); border-radius:10px; background:var(--sunken); padding:11px 13px; display:grid; grid-template-columns:150px minmax(0,1fr) 20px minmax(0,1fr) 72px; gap:10px; align-items:center; }
+  .cache-row .ck { font-size:12px; font-weight:750; }
+  .cache-row code { font-family:var(--mono); font-size:10.5px; color:var(--ink-2); background:var(--code-bg); padding:2px 5px; border-radius:5px; overflow-wrap:anywhere; }
+  .cache-row .arrow { color:var(--ink-3); text-align:center; }
+
+  .scenarios { display:grid; gap:8px; }
+  .scenario { border:1px solid var(--border); border-radius:10px; background:var(--sunken); overflow:hidden; }
+  .scenario summary { list-style:none; cursor:pointer; display:flex; align-items:flex-start; gap:10px; padding:11px 13px; }
+  .scenario summary::-webkit-details-marker { display:none; }
+  .scenario summary:hover { background:var(--raised); }
+  .scenario .sid { font-family:var(--mono); font-size:11px; color:var(--ink-3); flex:none; margin-top:2px; }
+  .scenario .stitle { font-size:12.5px; font-weight:750; min-width:0; flex:1; }
+  .scenario .smore { padding:0 13px 13px 13px; display:grid; gap:8px; }
+  .scenario .sgrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .scenario .scell { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:9px 10px; }
+  .scenario .scell b { display:block; font-size:10px; text-transform:uppercase; letter-spacing:.7px; color:var(--ink-3); margin-bottom:3px; }
+  .scenario .scell p { margin:0; font-size:11.5px; color:var(--ink-2); line-height:1.45; }
+
+  .defects { display:grid; gap:8px; }
+  .defect { border:1px solid var(--border); border-radius:10px; background:var(--sunken); overflow:hidden; }
+  .defect.sim-fixed { border-color:var(--ok); }
+  .defect.sim-fixed .dtitle { text-decoration:line-through; color:var(--ink-3); }
+  .defect summary { list-style:none; cursor:pointer; display:flex; align-items:flex-start; gap:10px; padding:11px 13px; }
+  .defect summary::-webkit-details-marker { display:none; }
+  .defect summary:hover { background:var(--raised); }
+  .sev { flex:none; font-size:9.5px; font-weight:850; letter-spacing:.6px; padding:4px 6px; border-radius:5px; border:1px solid currentColor; margin-top:1px; }
+  .sev.p0 { color:var(--danger); }
+  .sev.p1 { color:var(--warn); }
+  .sev.p2 { color:var(--info); }
+  .did { font-family:var(--mono); font-size:10.5px; color:var(--ink-3); flex:none; margin-top:3px; }
+  .dmain { min-width:0; flex:1; }
+  .dtitle { font-size:12.5px; font-weight:750; line-height:1.4; }
+  .dwhere { margin-top:2px; color:var(--ink-3); font-size:10.5px; font-family:var(--mono); }
+  .dmore { padding:0 13px 13px; display:grid; gap:8px; }
+  .dgrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .dcell { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:9px 10px; }
+  .dcell b { display:block; font-size:10px; text-transform:uppercase; letter-spacing:.7px; color:var(--ink-3); margin-bottom:3px; }
+  .dcell p { margin:0; font-size:11.5px; color:var(--ink-2); line-height:1.45; }
+  .fixbtn { justify-self:start; appearance:none; border:1px solid var(--border-control); background:var(--card); border-radius:8px; padding:6px 10px; font-size:11px; font-weight:750; color:var(--ink-2); min-height:32px; }
+  .fixbtn:hover { border-color:var(--action); color:var(--ink); }
+  .defect.sim-fixed .fixbtn { border-color:var(--ok); color:var(--ok); }
+
+  .native { display:grid; gap:8px; }
+  .native-row { border:1px solid var(--border); border-radius:10px; background:var(--sunken); padding:10px 12px; display:grid; grid-template-columns:110px minmax(0,1fr) 96px; gap:10px; align-items:start; }
+  .native-row b { font-size:11.5px; }
+  .native-row p { margin:0; color:var(--ink-2); font-size:11.5px; line-height:1.45; }
+  .native-row .v { justify-self:end; }
+
+  .checks { list-style:none; margin:0; padding:0; display:grid; gap:8px; }
+  .checks li { display:flex; gap:9px; font-size:12.5px; color:var(--ink-2); line-height:1.45; }
+  .checks .box { width:15px; height:15px; border-radius:4px; border:1px solid var(--border-control); flex:none; margin-top:2px; }
+  .checks .box.done { background:var(--ok); border-color:var(--ok); }
+  .checks .box.open { border-color:var(--warn); }
+
+  .rail .panel-body { display:grid; gap:16px; }
+  .cmd { background:var(--code-bg); border:1px solid var(--border); border-radius:9px; padding:9px 10px; font-family:var(--mono); font-size:11px; color:var(--ink-2); overflow-wrap:anywhere; }
+  .cmd + .cmd { margin-top:5px; }
+  .cmd b { color:var(--ink); }
+  .meta { display:flex; justify-content:space-between; gap:10px; font-size:11.5px; padding:6px 0; border-bottom:1px solid var(--hairline); }
+  .meta:last-child { border-bottom:0; }
+  .meta span { color:var(--ink-3); }
+  .meta b { font-variant-numeric:tabular-nums; }
+
+  .search { display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--border-control); border-radius:999px; padding:0 12px; flex:1 1 240px; min-width:200px; }
+  .search input { flex:1; border:0; outline:0; background:transparent; padding:9px 0; min-width:0; font-size:12.5px; }
+  .search svg { flex:none; color:var(--ink-3); }
+  .toolbar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
+  .ghost { appearance:none; border:1px solid var(--border); background:transparent; color:var(--ink-2); border-radius:999px; padding:8px 12px; min-height:34px; font-size:11.5px; font-weight:750; }
+
+  .foot { margin-top:22px; padding-top:18px; border-top:1px solid var(--border); color:var(--ink-3); font-size:12px; display:flex; gap:14px; flex-wrap:wrap; justify-content:space-between; }
+  .foot b { color:var(--ink-2); }
+  .empty { padding:22px 10px; text-align:center; color:var(--ink-3); font-size:13px; }
+  .toast {
+    position:fixed; left:50%; bottom:24px; transform:translate(-50%,8px); opacity:0; pointer-events:none;
+    background:var(--card); border:1px solid var(--border-control); color:var(--ink);
+    padding:10px 15px; border-radius:999px; font-size:12px; font-weight:700; transition:opacity var(--motion), transform var(--motion); z-index:20;
+  }
+  .toast.on { opacity:1; transform:translate(-50%,0); }
+
+  @media (max-width:1120px) {
+    .layout { grid-template-columns:1fr; }
+    .rail { order:-1; }
+    .rail .panel-body { grid-template-columns:1fr 1fr; align-items:start; }
+    .cache-row { grid-template-columns:130px 1fr 18px 1fr 68px; }
+  }
+  @media (max-width:820px) {
+    .budget { grid-template-columns:40px minmax(0,1fr) 82px; }
+    .budget .btrack { grid-column:1 / -1; }
+    .cache-row { grid-template-columns:1fr; }
+    .cache-row .arrow { display:none; }
+    .native-row { grid-template-columns:1fr; }
+    .native-row .v { justify-self:start; }
+  }
+  @media (max-width:760px) {
+    .wrap { padding:18px 14px 52px; }
+    header.hero { grid-template-columns:1fr; align-items:start; }
+    .stamp { text-align:left; }
+    .stats { grid-template-columns:1fr 1fr; }
+    .scenario .sgrid, .dgrid { grid-template-columns:1fr; }
+    .rail .panel-body { grid-template-columns:1fr; }
+    .assets .hide-sm { display:none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration:0ms !important; animation-duration:0ms !important; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to measurements</a>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">MA</div>
+      <div>
+        <b>MovieArena design process</b>
+        <span>Phase 13 · Performance and resilience</span>
+      </div>
+    </div>
+    <div class="seg" role="group" aria-label="Theme">
+      <button type="button" data-mode="system">System</button>
+      <button type="button" data-mode="dark" aria-pressed="true">Dark</button>
+      <button type="button" data-mode="light">Light</button>
+    </div>
+    <div class="status-pill"><span class="dot" aria-hidden="true"></span>Locked v13.0</div>
+  </div>
+
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Measured, then budgeted</p>
+      <h1>Performance and resilience</h1>
+      <p class="lede">Sixteen budgets across classic, React, and native. The design is not too heavy — <b>the React server sends it uncompressed</b>. Classic first load is <b>266 KB brotli</b>; React sends <b>524 KB</b> from the same code that compresses to <b>126 KB</b>. The catalog is <b>1.43 MB</b> on React and <b>250.6 KB</b> on classic.</p>
+    </div>
+    <div class="stamp">
+      <b>Measured 8 Nov 2026</b>
+      Build · 181 ms<br>
+      Startup · 882 / 363 ms<br>
+      No browser trace<br>
+      No device run
+    </div>
+  </header>
+
+  <section class="stats" aria-label="Headline measurements">
+    <div class="stat good">
+      <span class="k" id="stat-classic">266 KB</span>
+      <span class="l">Classic first load</span>
+      <span class="sub">Brotli · budget 300 KB · pass</span>
+    </div>
+    <div class="stat bad">
+      <span class="k" id="stat-react">524 KB</span>
+      <span class="l">React first load</span>
+      <span class="sub">As served · 126 KB compressed potential</span>
+    </div>
+    <div class="stat bad">
+      <span class="k" id="stat-catalog">1.43 MB</span>
+      <span class="l">Catalog on React</span>
+      <span class="sub">250.6 KB on classic · no compression</span>
+    </div>
+    <div class="stat warn">
+      <span class="k" id="stat-open">3 P0</span>
+      <span class="l">Launch blockers</span>
+      <span class="sub" id="stat-open-sub">of 15 defects · 5 P1 · 7 P2</span>
+    </div>
+  </section>
+
+  <div class="toolbar" role="search">
+    <label class="search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <input id="q" type="search" placeholder="Filter budgets, scenarios, defects, files, or fixes" autocomplete="off" aria-label="Filter budgets, scenarios, and defects">
+    </label>
+    <button class="ghost" type="button" id="reset">Reset</button>
+  </div>
+
+  <div class="layout">
+    <div class="col">
+      <section class="panel" id="budget-panel" aria-labelledby="budget-h">
+        <div class="panel-head">
+          <span class="rule" aria-hidden="true"></span>
+          <h2 id="budget-h">Budgets against measurement</h2>
+          <span class="count" id="budget-count">16 shown</span>
+        </div>
+        <div class="panel-head" style="border-top:0;padding-top:0">
+          <div class="chips" role="group" aria-label="Budget verdict">
+            <button class="chip" type="button" data-bfilter="all" aria-pressed="true">All <span class="n" id="n-b-all">16</span></button>
+            <button class="chip" type="button" data-bfilter="pass" aria-pressed="false">Pass <span class="n" id="n-b-pass">5</span></button>
+            <button class="chip" type="button" data-bfilter="fail" aria-pressed="false">Fail <span class="n" id="n-b-fail">4</span></button>
+            <button class="chip" type="button" data-bfilter="unv" aria-pressed="false">Unverified <span class="n" id="n-b-unv">7</span></button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="budgets" id="budgets"></div>
+          <p class="empty" id="no-budgets" hidden>No budgets match that filter.</p>
+        </div>
+      </section>
+
+      <section class="panel" id="load-panel" aria-labelledby="load-h">
+        <div class="panel-head">
+          <span class="rule" aria-hidden="true"></span>
+          <h2 id="load-h">First-load transfer</h2>
+          <div class="toggle" role="group" aria-label="Transfer mode" style="margin-left:auto">
+            <button type="button" data-load="served" aria-pressed="true">As served</button>
+            <button type="button" data-load="br" aria-pressed="false">Brotli potential</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="bar-list" id="load-bars" aria-label="First-load transfer by surface"></div>
+          <p class="subnote" id="load-note" style="margin-top:12px">Classic is already compressed. React local files are 8 scripts and styles; the HLS row adds the 413 KB CDN runtime fetched on every React page. YouTube iframe API is external and unmeasured.</p>
+        </div>
+      </section>
+
+      <section class="panel" id="assets-panel" aria-labelledby="assets-h">
+        <div class="panel-head">
+          <span class="rule" aria-hidden="true"></span>
+          <h2 id="assets-h">Asset weight</h2>
+          <span class="count">Raw · gzip · brotli</span>
+        </div>
+        <div class="panel-body">
+          <table class="assets">
+            <thead>
+              <tr><th>File</th><th class="num">Raw</th><th class="num hide-sm">Gzip</th><th class="num">Brotli</th><th class="hide-sm">Compressed share</th></tr>
+            </thead>
+            <tbody id="assets-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel" id="cache-panel" aria-labelledby="cache-h">
+        <div class="panel-head">
+          <span class="rule" aria-hidden="true"></span>
+          <h2 id="cache-h">Cache policy</h2>
+          <span class="count">Current → target</span>
+        </div>
+        <div class="panel-body">
+          <div class="cache" id="cache-rows"></div>
+        </div>
+      </section>
+
+      <section class="panel" id="resilience-panel" aria-labelledby="resilience-h">
+        <div class="panel-head">
+          <span class="rule" aria-hidden="true"></span>
+          <h2 id="resilience-h">Resilience scenarios</h2>
+          <span class="count" id="scenario-count">17 shown</span>
+        </div>
+        <div class="panel-head" style="border-top:0;padding-top:0">
+          <div class="chips" role="group" aria-label="Scenario verdict">
+            <button class="chip" type="button" data-sfilter="all" aria-pressed="true">All <span class="n" id="n-s-all">17</span></button>
+            <button class="chip" type="button" data-sfilter="pass" aria-pressed="false">Pass <span class="n" id="n-s-pass">9</span></button>
+            <button class="chip" type="button" data-sfilter="part" aria-pressed="false">Partial <span class="n" id="n-s-part">2</span></button>
+            <button class="chip" type="button" data-sfilter="fail" aria-pressed="false">Fail <span class="n" id="n-s-fail">6</span></button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="scenarios" id="scenarios"></div>
+          <p class="empty" id="no-scenarios" hidden>No scenarios match that filter.</p>
+        </div>
+      </section>
+
+      <section class="panel" id="defect-panel" aria-labelledby="defect-h">
+        <div class="panel-head">
+          <span class="rule" aria-hidden="true"></span>
+          <h2 id="defect-h">Defect register</h2>
+          <span class="count" id="defect-count">15 open</span>
+        </div>
+        <div class="panel-head" style="border-top:0;padding-top:0">
+          <div class="chips" role="group" aria-label="Defect severity">
+            <button class="chip" type="button" data-dfilter="all" aria-pressed="true">All <span class="n" id="n-d-all">15</span></button>
+            <button class="chip" type="button" data-dfilter="p0" aria-pressed="false">P0 <span class="n" id="n-d-p0">3</span></button>
+            <button class="chip" type="button" data-dfilter="p1" aria-pressed="false">P1 <span class="n" id="n-d-p1">5</span></button>
+            <button class="chip" type="button" data-dfilter="p2" aria-pressed="false">P2 <span class="n" id="n-d-p2">7</span></button>
+            <button class="chip" type="button" data-dfilter="fixed" aria-pressed="false">Simulated fixed <span class="n" id="n-d-fixed">0</span></button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="defects" id="defects"></div>
+          <p class="empty" id="no-defects" hidden>No defects match that filter.</p>
+        </div>
+      </section>
+    </div>
+
+    <aside class="col rail" aria-label="Evidence and readiness">
+      <section class="panel">
+        <div class="panel-head"><span class="rule" aria-hidden="true"></span><h2>Evidence of record</h2></div>
+        <div class="panel-body">
+          <div>
+            <div class="cmd"><b>curl</b> -H 'Accept-Encoding: br' -w '%{time_starttransfer}'</div>
+            <div class="cmd"><b>wc</b> -c · <b>zlib</b> gzip/brotli · <b>ps</b> -o rss</div>
+            <div class="cmd"><b>node</b> scripts/qa-phase12.js</div>
+          </div>
+          <div>
+            <div class="meta"><span>Classic first load</span><b>266 KB br</b></div>
+            <div class="meta"><span>React first load</span><b>524 KB raw</b></div>
+            <div class="meta"><span>React compressed potential</span><b>126 KB br</b></div>
+            <div class="meta"><span>Catalog classic / React</span><b>250.6 KB / 1.43 MB</b></div>
+            <div class="meta"><span>hls.js on every page</span><b>413 KB</b></div>
+            <div class="meta"><span>Build</span><b>181 ms</b></div>
+            <div class="meta"><span>Server startup</span><b>882 / 363 ms</b></div>
+            <div class="meta"><span>Server RSS</span><b>103 / 57 MB</b></div>
+            <div class="meta"><span>Measured LCP / INP</span><b>not run</b></div>
+          </div>
+          <p class="subnote">Read-only measurements. No browser, throttling, trace, device, load test, or telemetry. Values are local loopback, not production edge timings.</p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><span class="rule" aria-hidden="true"></span><h2>Native inspection</h2></div>
+        <div class="panel-body">
+          <div class="native" id="native-rows"></div>
+          <p class="subnote">Static source only. Cold start, memory, and video start are targets, not results.</p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><span class="rule" aria-hidden="true"></span><h2>Launch readiness</h2></div>
+        <div class="panel-body">
+          <ul class="checks">
+            <li><span class="box open" aria-hidden="true"></span>Compression and validators on every surface</li>
+            <li><span class="box open" aria-hidden="true"></span>Catalog parsed once; light payload on launch</li>
+            <li><span class="box open" aria-hidden="true"></span>No media runtime on browse</li>
+            <li><span class="box open" aria-hidden="true"></span>Readahead and relay probe on React</li>
+            <li><span class="box open" aria-hidden="true"></span>Responsive posters; CLS stays 0</li>
+            <li><span class="box open" aria-hidden="true"></span>Error tracking and rollback path</li>
+            <li><span class="box open" aria-hidden="true"></span>Opt-in RUM for four player budgets</li>
+            <li><span class="box" aria-hidden="true"></span>Load test at launch concurrency</li>
+            <li><span class="box" aria-hidden="true"></span>Phase 12 P0 claims and parity closed</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><span class="rule" aria-hidden="true"></span><h2>What is not measured</h2></div>
+        <div class="panel-body">
+          <ul class="checks">
+            <li><span class="box" aria-hidden="true"></span>LCP and CLS on a real device</li>
+            <li><span class="box" aria-hidden="true"></span>INP and long tasks</li>
+            <li><span class="box" aria-hidden="true"></span>TTFF, rebuffer, start failure</li>
+            <li><span class="box" aria-hidden="true"></span>Native cold start and memory</li>
+            <li><span class="box" aria-hidden="true"></span>Production CDN, TLS, HTTP/2</li>
+            <li><span class="box" aria-hidden="true"></span>Sustained load and soak behaviour</li>
+          </ul>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <div class="foot">
+    <span><b>Preview only.</b> A performance decision aid, not the product. No catalog imagery, no external assets.</span>
+    <span>Full evidence: <b>docs/design/phase-13-performance.md</b></span>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+  "use strict";
+
+  const BUDGETS = [
+    { id:"P1", label:"HTML document", target:"≤ 4 KB brotli", measured:"0.8 KB classic · 0.3 KB React", pct:20, verdict:"pass", note:"Shell is not the problem." },
+    { id:"P2", label:"Classic first-load code + catalog", target:"≤ 300 KB brotli", measured:"266 KB", pct:89, verdict:"pass", note:"Nine files; 219 KB of it is the catalog." },
+    { id:"P3", label:"React first-load code", target:"≤ 150 KB brotli", measured:"524 KB served · 126 KB compressed", pct:100, verdict:"fail", note:"The bytes exist; the server does not compress." },
+    { id:"P4", label:"Catalog payload on wire", target:"≤ 260 KB", measured:"250.6 KB classic · 1,436 KB React", pct:100, verdict:"fail", note:"Same JSON, 5.7× the transfer on React." },
+    { id:"P5", label:"Warm API TTFB", target:"≤ 100 ms", measured:"3.7 ms health · 25–36 ms catalog classic · 63 ms / 100 ms React", pct:100, verdict:"pass", note:"React is at the limit because it reparses the catalog." },
+    { id:"P6", label:"Server startup to first 200", target:"≤ 1 s", measured:"882 ms classic · 363 ms React", pct:88, verdict:"pass", note:"Loopback, cold process." },
+    { id:"P7", label:"Production build", target:"≤ 5 s", measured:"181 ms", pct:4, verdict:"pass", note:"Bun build, minified, no sourcemap." },
+    { id:"P8", label:"Repeat visit, unchanged asset", target:"≤ 1 KB overhead", measured:"0 B with 304 classic · 232 KB refetch React", pct:100, verdict:"fail", note:"Classic validates; React has no validator on static files." },
+    { id:"P9", label:"LCP on a mid-tier phone, 4G", target:"≤ 2.5 s", measured:"not measured", pct:69, verdict:"unv", note:"Needs Lighthouse or WebPageTest on a throttled profile." },
+    { id:"P10", label:"CLS, shell, rails, player", target:"0", measured:"not measured", pct:69, verdict:"unv", note:"Boxes are reserved by CSS; images have no dimensions." },
+    { id:"P11", label:"TTFF, browse → playing", target:"≤ 2 s", measured:"not measured", pct:69, verdict:"unv", note:"Needs a player trace with a real episode." },
+    { id:"P12", label:"Rebuffer ratio", target:"< 1 %", measured:"not measured", pct:69, verdict:"unv", note:"Needs a playback session under throttling." },
+    { id:"P13", label:"Playback start failure", target:"< 1.5 %", measured:"not measured", pct:69, verdict:"unv", note:"Needs a matrix of sources and hosts." },
+    { id:"P14", label:"INP", target:"< 200 ms", measured:"not measured", pct:69, verdict:"unv", note:"Needs field or lab interaction data." },
+    { id:"P15", label:"Native cold start to usable Home", target:"≤ 2 s", measured:"not measured", pct:69, verdict:"unv", note:"Needs a device or simulator build." },
+    { id:"P16", label:"No media runtime on browse", target:"0 bytes", measured:"413 KB hls.js on every React page", pct:100, verdict:"fail", note:"Needed only on Watch HLS playback." }
+  ];
+
+  const ASSETS = [
+    { file:"shows-data.js", raw:1436570, gz:274590, br:219405 },
+    { file:"player.js", raw:137550, gz:34252, br:28799 },
+    { file:"main.js", raw:232112, gz:72866, br:63382 },
+    { file:"style.css", raw:79096, gz:16340, br:13912 },
+    { file:"watch.js", raw:31696, gz:11027, br:9573 },
+    { file:"home.js", raw:30521, gz:9865, br:8633 },
+    { file:"common.js", raw:21877, gz:7360, br:6312 },
+    { file:"links.js", raw:21492, gz:6359, br:5565 },
+    { file:"custom-links.js", raw:20932, gz:4370, br:3804 },
+    { file:"moviemind.js", raw:15756, gz:5936, br:5041 },
+    { file:"sw.js", raw:12770, gz:4431, br:3802 },
+    { file:"app.css (dead)", raw:11402, gz:3246, br:2785 },
+    { file:"main.css", raw:9370, gz:2760, br:2402 },
+    { file:"icons.js", raw:7434, gz:3338, br:2933 },
+    { file:"hls.js 1.5.13 (CDN)", raw:413181, gz:124361, br:103026 },
+    { file:"watch.html", raw:3620, gz:1502, br:1138 },
+    { file:"index.html", raw:2635, gz:1054, br:789 },
+    { file:"dist/index.html", raw:881, gz:440, br:287 },
+    { file:"catalog-meta.js", raw:799, gz:441, br:368 }
+  ];
+
+  const LOADS = [
+    { group:"First load", label:"Classic home", served:265973, br:265973, note:"9 local files · already brotli" },
+    { group:"First load", label:"React home (local)", served:523742, br:125838, note:"8 local files · shared player and styles included" },
+    { group:"First load", label:"React home + hls.js", served:936923, br:228864, note:"adds the 413 KB CDN runtime · YouTube API unmeasured" },
+    { group:"Catalog", label:"Catalog · classic :8942", served:250574, br:250574, note:"brotli body · ETag 304 works" },
+    { group:"Catalog", label:"Catalog · React :8943", served:1436300, br:250574, note:"same JSON · no compression" }
+  ];
+
+  const CACHE = [
+    { key:"HTML", current:"no-cache + ETag (classic) · no-cache, no validator (React)", target:"no-cache · always revalidate", verdict:"part" },
+    { key:"Versioned JS/CSS", current:"no-cache · weak ETag · two versions of player.js", target:"immutable, max-age 1 year · one version per file", verdict:"fail" },
+    { key:"Unversioned JS/CSS", current:"no-cache · no hash · no ?v=", target:"content hash, then immutable", verdict:"fail" },
+    { key:"Catalog API", current:"no-cache + ETag (both) · brotli only on classic", target:"no-cache + ETag · compress every 200", verdict:"part" },
+    { key:"Light API", current:"no-store (classic) · no header (React)", target:"ETag + short max-age or no-cache", verdict:"fail" },
+    { key:"Posters", current:"public, max-age=300 · no dimensions · no srcset", target:"max-age 86400 · responsive sizes · dimensions", verdict:"part" },
+    { key:"Relay media", current:"public, max-age=3600 · accept-ranges", target:"unchanged", verdict:"pass" },
+    { key:"Worker media chunks", current:"Cache API · no-store synthetic 200", target:"unchanged · LRU eviction", verdict:"pass" }
+  ];
+
+  const SCENARIOS = [
+    { id:"R1", title:"Catalog API fails on classic", status:"pass", expected:"Page renders from embedded data; refresh offers retry", actual:"shows-data.js is the source; refresh status says Update failed — retry" },
+    { id:"R2", title:"Catalog API fails on React", status:"fail", expected:"Inline error with retry and cached content", actual:"Full-page Catalog failed to load: api 500; no retry" },
+    { id:"R3", title:"Catalog API fails on native", status:"pass", expected:"Error card with retry and API-base hint", actual:"Error card with retry and EXPO_PUBLIC_API_BASE hint" },
+    { id:"R4", title:"Catalog is empty or malformed", status:"fail", expected:"Distinguish empty catalog from request failure", actual:"Bun catches parse errors and returns []; clients show zero shows silently" },
+    { id:"R5", title:"Offline after first load, classic", status:"part", expected:"App shell available; browsing works", actual:"No app-shell cache; only the in-memory session survives" },
+    { id:"R6", title:"Offline after first load, React", status:"fail", expected:"App shell available", actual:"No service worker at all" },
+    { id:"R7", title:"Relay upstream times out", status:"pass", expected:"Explicit timeout and a player fallback message", actual:"15 s abort, 504, clear player message" },
+    { id:"R8", title:"Relay upstream returns 404", status:"pass", expected:"404 with no retry loop", actual:"404 propagated; player fallback" },
+    { id:"R9", title:"Relay health unavailable on React", status:"fail", expected:"Fall back to the direct host URL", actual:"__MA_RELAY defaults true; no probe; direct playback goes through a dead relay" },
+    { id:"R10", title:"Host ignores Range", status:"pass", expected:"Stop prefetch and play from the network", actual:"Worker cancels and throws; fetch falls through" },
+    { id:"R11", title:"Network drops mid-playback", status:"pass", expected:"Cached next five minutes keep playing", actual:"Worker assembles 206 from cached chunks · unverified at runtime" },
+    { id:"R12", title:"Storage full or persist denied", status:"pass", expected:"Playback continues; cache is optional", actual:"Write errors swallowed; persist() ignored" },
+    { id:"R13", title:"Service worker unsupported", status:"pass", expected:"Direct playback", actual:"Registration skipped; network playback" },
+    { id:"R14", title:"jsdelivr blocked or slow", status:"fail", expected:"HLS falls back or fails clearly", actual:"hls.js never loads; HLS sources fail; YouTube and MP4 unaffected" },
+    { id:"R15", title:"YouTube iframe API blocked", status:"part", expected:"Clear message, no blank player", actual:"Fallback copy is present; no alternative engine" },
+    { id:"R16", title:"Native catalog fetch fails", status:"pass", expected:"Retry without losing saved state", actual:"Error screen, retry, favorites and last-played preserved" },
+    { id:"R17", title:"Native relay unavailable", status:"fail", expected:"Direct-source fallback", actual:"WebView uses the relay unconditionally for allowlisted hosts" }
+  ];
+
+  const DEFECTS = [
+    { id:"PERF-01", sev:"P0", where:"apps/server/server.ts", title:"No compression on static files or JSON", evidence:"React sends 524 KB of local code and a 1.43 MB catalog; the same files brotli to 126 KB and 250.6 KB.", fix:"Brotli/gzip with Vary, cached per file version.", accept:"React initial ≤ 150 KB brotli; catalog ≤ 260 KB." },
+    { id:"PERF-02", sev:"P0", where:"apps/server/server.ts", title:"loadShows() reparses 1.4 MB on every request", evidence:"Median /api/health is 63 ms on React against 3.7 ms on classic, which caches the parsed catalog.", fix:"Parse once per process; invalidate on file mtime.", accept:"/api/health median ≤ 10 ms on :8943." },
+    { id:"PERF-03", sev:"P0", where:"React App.jsx · native App.jsx", title:"Full catalog on every launch, with no cache", evidence:"React and native fetch /api/catalog at startup; the light endpoint exists but is unused; AsyncStorage holds only favorites and last-played.", fix:"Light payload plus per-show fetch, or a cached snapshot with revalidation.", accept:"First paint before the full catalog; warm launch uses cache." },
+    { id:"PERF-04", sev:"P1", where:"index.html", title:"1.44 MB synchronous catalog blocks first paint", evidence:"shows-data.js has no defer; 219 KB brotli is spent before the first card can render.", fix:"Defer, split, or stream; paint a skeleton first.", accept:"First card paints before the catalog completes." },
+    { id:"PERF-05", sev:"P1", where:"apps/web/index.html", title:"413 KB hls.js from a third-party CDN on every page", evidence:"The defer script loads on Home, Browse, and Search even though only Watch HLS needs it.", fix:"Self-host and load only on Watch HLS playback, or use the native engine.", accept:"Zero hls.js bytes on browse." },
+    { id:"PERF-06", sev:"P1", where:"HTML heads", title:"No immutable caching; version drift", evidence:"player.js is v=4 in React and v=20 in classic; icons, main, moviemind, shows-data, and catalog-meta are unversioned; everything says no-cache.", fix:"One version per file; content hashes; immutable on versioned URLs.", accept:"One version per file; repeat request costs 0 B." },
+    { id:"PERF-07", sev:"P1", where:":8943 static", title:"No ETag, Last-Modified, or 304", evidence:"Repeat visits refetch main.js at 232 KB and style.css at 79 KB.", fix:"Add validators and conditional responses.", accept:"Repeat request returns 304." },
+    { id:"PERF-08", sev:"P1", where:"apps/web/src/Watch.jsx", title:"No readahead cache and no relay health probe", evidence:"React Watch never registers sw.js, never posts ma:progress, and assumes the relay works.", fix:"Mirror the classic worker contract and probe /api/health.", accept:"Five-minute readahead on React; direct fallback when relay fails." },
+    { id:"PERF-09", sev:"P2", where:"home.js · App.jsx", title:"Posters lack dimensions, srcset, priority, and async decode", evidence:"Every viewport downloads the same art; only the CSS box prevents shift.", fix:"Width, height, srcset, hero fetchpriority, decoding=async.", accept:"CLS 0; mobile bytes reduced." },
+    { id:"PERF-10", sev:"P2", where:"index.html · React index", title:"No preconnect on browse surfaces", evidence:"Watch preconnects to three hosts; Home and React do not.", fix:"Preconnect only to hosts the page uses.", accept:"Connection warm before art." },
+    { id:"PERF-11", sev:"P2", where:"apps/web/build.js", title:"dist/app.css is a dead 11.4 KB duplicate", evidence:"The applied stylesheet is main.css, emitted from the same import; app.css is copied and never linked.", fix:"Stop copying it.", accept:"No unreferenced CSS in dist." },
+    { id:"PERF-12", sev:"P2", where:"apps/web/build.js", title:"One 232 KB bundle for all routes", evidence:"Home, Watch, and every future route share main.js.", fix:"Route-level split; load Watch after Home.", accept:"Home bundle excludes Watch code." },
+    { id:"PERF-13", sev:"P2", where:"sw.js", title:"Media-only worker; no app shell or offline page", evidence:"Offline navigation fails even after a successful visit.", fix:"Cache the shell after the media cache passes.", accept:"Offline navigation renders a real state." },
+    { id:"PERF-14", sev:"P2", where:"sw.js", title:"Insertion-order eviction; no cache visibility", evidence:"The oldest inserted chunk is deleted first, not the least recently used.", fix:"LRU plus a clear-cached-media control.", accept:"Old media evicted first; user can clear." },
+    { id:"PERF-15", sev:"P2", where:"All surfaces", title:"No performance instrumentation", evidence:"TTFF, rebuffer, start failure, and INP cannot be verified in production.", fix:"Opt-in, PII-free RUM for the four budgets.", accept:"Dashboards exist before launch." }
+  ];
+
+  const NATIVE = [
+    { area:"Catalog", text:"Fetches the full 1.4 MB catalog on every launch; no local snapshot.", verdict:"fail" },
+    { area:"Persistence", text:"AsyncStorage holds favorites and last-played only.", verdict:"part" },
+    { area:"Images", text:"Full source size in every rail; no resize or cache policy.", verdict:"fail" },
+    { area:"Home", text:"One ScrollView mounts every rail eagerly.", verdict:"part" },
+    { area:"Lists", text:"FlatList for search, list, and episodes.", verdict:"pass" },
+    { area:"Player", text:"WebView wrapper; no native media pipeline or background playback.", verdict:"fail" },
+    { area:"Prefetch", text:"No next-episode prefetch; the next start pays a fresh request.", verdict:"fail" },
+    { area:"Measurement", text:"No cold-start, memory, or TTFF data.", verdict:"unv" }
+  ];
+
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+  const state = { q:"", bfilter:"all", sfilter:"all", dfilter:"all", load:"served", fixed:new Set() };
+
+  /* ---------- helpers ---------- */
+  function fmtBytes(n) {
+    if (n >= 1000000) return (n / 1000000).toFixed(2) + " MB";
+    if (n >= 1000) return (n / 1000).toFixed(n >= 100000 ? 0 : 1) + " KB";
+    return n + " B";
+  }
+  function el(tag, cls, text) {
+    const node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text != null) node.textContent = text;
+    return node;
+  }
+  function verdictLabel(v) {
+    return v === "pass" ? "Pass" : v === "fail" ? "Fail" : v === "part" ? "Partial" : "Unverified";
+  }
+
+  /* ---------- theme ---------- */
+  const modeButtons = $$("[data-mode]");
+  const mq = window.matchMedia("(prefers-color-scheme: light)");
+  function readMode() {
+    try { return localStorage.getItem("ma.phase13.mode") || "system"; } catch (_) { return "system"; }
+  }
+  function applyMode(mode) {
+    const resolved = mode === "system" ? (mq.matches ? "light" : "dark") : mode;
+    document.documentElement.dataset.theme = resolved;
+    modeButtons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === mode)));
+  }
+  modeButtons.forEach((b) => b.addEventListener("click", () => {
+    try { localStorage.setItem("ma.phase13.mode", b.dataset.mode); } catch (_) {}
+    applyMode(b.dataset.mode);
+    toast(b.dataset.mode === "system" ? "Following the system theme." : b.dataset.mode + " theme.");
+  }));
+  if (mq.addEventListener) mq.addEventListener("change", () => { if (readMode() === "system") applyMode("system"); });
+
+  /* ---------- toast ---------- */
+  let toastTimer = 0;
+  function toast(text) {
+    const box = $("#toast");
+    box.textContent = text;
+    box.classList.add("on");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => box.classList.remove("on"), 2200);
+  }
+
+  /* ---------- budgets ---------- */
+  const budgetsEl = $("#budgets");
+  BUDGETS.forEach((b) => {
+    const row = el("div", "budget");
+    row.dataset.verdict = b.verdict;
+    row.dataset.text = [b.id, b.label, b.target, b.measured, b.note].join(" ");
+    row.append(el("span", "bid", b.id));
+    const main = el("span", "blabel", b.label);
+    const meta = el("span", "bmeta", "Target " + b.target + " · " + b.measured);
+    main.append(meta);
+    row.append(main);
+    const track = el("span", "btrack");
+    const fill = el("span", "bfill " + b.verdict);
+    fill.style.width = (b.verdict === "unv" ? 100 : Math.max(2, Math.min(100, b.pct))) + "%";
+    track.append(fill);
+    row.append(track);
+    row.append(el("span", "v " + b.verdict, verdictLabel(b.verdict)));
+    row.title = b.note;
+    budgetsEl.append(row);
+  });
+
+  /* ---------- first load ---------- */
+  const loadEl = $("#load-bars");
+  function renderLoads() {
+    loadEl.textContent = "";
+    const groups = ["First load", "Catalog"];
+    groups.forEach((group) => {
+      const rows = LOADS.filter((r) => r.group === group);
+      const values = rows.map((r) => r[state.load]);
+      const max = Math.max.apply(null, values);
+      loadEl.append(el("p", "subnote", group + (state.load === "br" ? " · brotli" : " · as served")));
+      rows.forEach((r) => {
+        const value = r[state.load];
+        const row = el("div", "bar-row");
+        row.append(el("span", "name", r.label));
+        row.append(el("span", "val", fmtBytes(value)));
+        const track = el("span", "track");
+        const fill = el("span", "fill " + (group === "Catalog" && r.label.indexOf("React") >= 0 ? "bad" : group === "First load" && r.label.indexOf("React") >= 0 ? "bad" : "ok"));
+        fill.style.width = Math.max(1, Math.round((value / max) * 100)) + "%";
+        track.append(fill);
+        row.append(track);
+        row.append(el("span", "note", r.note));
+        loadEl.append(row);
+      });
+    });
+    $("#load-note").textContent = state.load === "br"
+      ? "Brotli potential assumes the Bun server compresses the same bytes the classic server already compresses. It is an achievable floor, not a current measurement."
+      : "Classic is already compressed. React local files are 8 scripts and styles; the HLS row adds the 413 KB CDN runtime fetched on every React page. YouTube iframe API is external and unmeasured.";
+  }
+  $$("[data-load]").forEach((b) => b.addEventListener("click", () => {
+    state.load = b.dataset.load;
+    $$("[data-load]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    renderLoads();
+  }));
+
+  /* ---------- assets ---------- */
+  const assetsEl = $("#assets-body");
+  ASSETS.slice().sort((a, b) => b.raw - a.raw).forEach((a) => {
+    const tr = document.createElement("tr");
+    const name = el("td", "file", a.file);
+    const raw = el("td", "num", a.raw.toLocaleString("en-US"));
+    const gz = el("td", "num hide-sm", a.gz.toLocaleString("en-US"));
+    const br = el("td", "num", a.br.toLocaleString("en-US"));
+    const share = el("td", "hide-sm");
+    const mini = el("div", "mini");
+    const bar = el("span");
+    bar.style.width = Math.max(1, Math.round((a.br / a.raw) * 100)) + "%";
+    mini.append(bar);
+    share.append(mini);
+    tr.append(name, raw, gz, br, share);
+    assetsEl.append(tr);
+  });
+
+  /* ---------- cache ---------- */
+  const cacheEl = $("#cache-rows");
+  CACHE.forEach((c) => {
+    const row = el("div", "cache-row");
+    row.append(el("span", "ck", c.key));
+    row.append(el("code", null, c.current));
+    row.append(el("span", "arrow", "→"));
+    row.append(el("code", null, c.target));
+    row.append(el("span", "v " + c.verdict, verdictLabel(c.verdict)));
+    cacheEl.append(row);
+  });
+
+  /* ---------- scenarios ---------- */
+  const scenariosEl = $("#scenarios");
+  SCENARIOS.forEach((s) => {
+    const card = document.createElement("details");
+    card.className = "scenario";
+    card.dataset.status = s.status;
+    card.dataset.text = [s.id, s.title, s.expected, s.actual].join(" ");
+    const sum = document.createElement("summary");
+    sum.append(el("span", "sid", s.id));
+    sum.append(el("span", "stitle", s.title));
+    sum.append(el("span", "v " + s.status, verdictLabel(s.status)));
+    const more = el("div", "smore");
+    const grid = el("div", "sgrid");
+    [["Expected", s.expected], ["Actual", s.actual]].forEach(([k, v]) => {
+      const cell = el("div", "scell");
+      cell.append(el("b", null, k));
+      cell.append(el("p", null, v));
+      grid.append(cell);
+    });
+    more.append(grid);
+    card.append(sum, more);
+    scenariosEl.append(card);
+  });
+
+  /* ---------- defects ---------- */
+  const defectsEl = $("#defects");
+  DEFECTS.forEach((d) => {
+    const card = document.createElement("details");
+    card.className = "defect";
+    card.dataset.sev = d.sev;
+    card.dataset.id = d.id;
+    card.dataset.text = [d.id, d.where, d.title, d.evidence, d.fix, d.accept].join(" ");
+    const sum = document.createElement("summary");
+    sum.append(el("span", "sev " + d.sev.toLowerCase(), d.sev));
+    sum.append(el("span", "did", d.id));
+    const main = el("span", "dmain");
+    main.append(el("span", "dtitle", d.title));
+    main.append(el("span", "dwhere", d.where));
+    sum.append(main);
+    const more = el("div", "dmore");
+    const grid = el("div", "dgrid");
+    [["Evidence", d.evidence], ["Required fix", d.fix], ["Acceptance test", d.accept]].forEach(([k, v], i) => {
+      const cell = el("div", "dcell");
+      if (i === 2) cell.style.gridColumn = "1 / -1";
+      cell.append(el("b", null, k));
+      cell.append(el("p", null, v));
+      grid.append(cell);
+    });
+    const btn = el("button", "fixbtn", "Mark fixed (simulation)");
+    btn.type = "button";
+    btn.addEventListener("click", () => {
+      if (state.fixed.has(d.id)) {
+        state.fixed.delete(d.id);
+        card.classList.remove("sim-fixed");
+        btn.textContent = "Mark fixed (simulation)";
+        toast(d.id + " reopened.");
+      } else {
+        state.fixed.add(d.id);
+        card.classList.add("sim-fixed");
+        btn.textContent = "Reopen";
+        toast(d.id + " marked fixed — simulation only.");
+      }
+      renderDefects();
+    });
+    more.append(grid, btn);
+    card.append(sum, more);
+    defectsEl.append(card);
+  });
+
+  /* ---------- native ---------- */
+  const nativeEl = $("#native-rows");
+  NATIVE.forEach((n) => {
+    const row = el("div", "native-row");
+    row.append(el("b", null, n.area));
+    row.append(el("p", null, n.text));
+    row.append(el("span", "v " + n.verdict, verdictLabel(n.verdict)));
+    nativeEl.append(row);
+  });
+
+  /* ---------- filtering ---------- */
+  const budgetPanel = $("#budget-panel");
+  const loadPanel = $("#load-panel");
+  const assetsPanel = $("#assets-panel");
+  const cachePanel = $("#cache-panel");
+  const scenarioPanel = $("#resilience-panel");
+  const defectPanel = $("#defect-panel");
+
+  function matches(text) {
+    return !state.q || text.toLowerCase().includes(state.q.toLowerCase());
+  }
+
+  function renderBudgets() {
+    let shown = 0;
+    $$(".budget").forEach((row) => {
+      const ok = (state.bfilter === "all" || row.dataset.verdict === state.bfilter) && matches(row.dataset.text);
+      row.hidden = !ok;
+      if (ok) shown++;
+    });
+    $("#no-budgets").hidden = shown > 0;
+    $("#budget-count").textContent = shown + " shown";
+    $("#n-b-all").textContent = BUDGETS.length;
+    $("#n-b-pass").textContent = BUDGETS.filter((b) => b.verdict === "pass").length;
+    $("#n-b-fail").textContent = BUDGETS.filter((b) => b.verdict === "fail").length;
+    $("#n-b-unv").textContent = BUDGETS.filter((b) => b.verdict === "unv").length;
+  }
+
+  function renderScenarios() {
+    let shown = 0;
+    $$(".scenario").forEach((card) => {
+      const ok = (state.sfilter === "all" || card.dataset.status === state.sfilter) && matches(card.dataset.text);
+      card.hidden = !ok;
+      if (ok) shown++;
+    });
+    $("#no-scenarios").hidden = shown > 0;
+    $("#scenario-count").textContent = shown + " shown";
+    $("#n-s-all").textContent = SCENARIOS.length;
+    $("#n-s-pass").textContent = SCENARIOS.filter((s) => s.status === "pass").length;
+    $("#n-s-part").textContent = SCENARIOS.filter((s) => s.status === "part").length;
+    $("#n-s-fail").textContent = SCENARIOS.filter((s) => s.status === "fail").length;
+  }
+
+  function renderDefects() {
+    let shown = 0;
+    $$(".defect").forEach((card) => {
+      const id = card.dataset.id;
+      const sev = card.dataset.sev;
+      const isFixed = state.fixed.has(id);
+      let ok = matches(card.dataset.text);
+      if (state.dfilter === "p0") ok = ok && sev === "P0" && !isFixed;
+      else if (state.dfilter === "p1") ok = ok && sev === "P1" && !isFixed;
+      else if (state.dfilter === "p2") ok = ok && sev === "P2" && !isFixed;
+      else if (state.dfilter === "fixed") ok = ok && isFixed;
+      card.hidden = !ok;
+      if (ok) shown++;
+    });
+    $("#no-defects").hidden = shown > 0;
+    const open = DEFECTS.length - state.fixed.size;
+    $("#defect-count").textContent = open + " open";
+    const p0 = DEFECTS.filter((d) => d.sev === "P0" && !state.fixed.has(d.id)).length;
+    const p1 = DEFECTS.filter((d) => d.sev === "P1" && !state.fixed.has(d.id)).length;
+    const p2 = DEFECTS.filter((d) => d.sev === "P2" && !state.fixed.has(d.id)).length;
+    $("#stat-open").textContent = p0 + " P0";
+    $("#stat-open-sub").textContent = "of " + open + " defects · " + p1 + " P1 · " + p2 + " P2";
+    $("#n-d-all").textContent = DEFECTS.length;
+    $("#n-d-p0").textContent = p0;
+    $("#n-d-p1").textContent = p1;
+    $("#n-d-p2").textContent = p2;
+    $("#n-d-fixed").textContent = state.fixed.size;
+  }
+
+  function renderAll() {
+    renderBudgets();
+    renderScenarios();
+    renderDefects();
+    const searching = state.q.length > 0;
+    budgetPanel.hidden = false;
+    loadPanel.hidden = searching;
+    assetsPanel.hidden = searching;
+    cachePanel.hidden = searching;
+    scenarioPanel.hidden = false;
+    defectPanel.hidden = false;
+  }
+
+  $$("[data-bfilter]").forEach((b) => b.addEventListener("click", () => {
+    state.bfilter = b.dataset.bfilter;
+    $$("[data-bfilter]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    renderBudgets();
+  }));
+  $$("[data-sfilter]").forEach((b) => b.addEventListener("click", () => {
+    state.sfilter = b.dataset.sfilter;
+    $$("[data-sfilter]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    renderScenarios();
+  }));
+  $$("[data-dfilter]").forEach((b) => b.addEventListener("click", () => {
+    state.dfilter = b.dataset.dfilter;
+    $$("[data-dfilter]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    renderDefects();
+  }));
+
+  $("#q").addEventListener("input", (e) => {
+    state.q = e.target.value.trim();
+    renderAll();
+    if (state.q) {
+      $$(".scenario").forEach((card) => { if (!card.hidden) card.open = true; });
+      $$(".defect").forEach((card) => { if (!card.hidden) card.open = true; });
+    }
+  });
+
+  $("#reset").addEventListener("click", () => {
+    state.q = "";
+    state.bfilter = "all";
+    state.sfilter = "all";
+    state.dfilter = "all";
+    state.fixed.clear();
+    $("#q").value = "";
+    $$("[data-bfilter]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.bfilter === "all")));
+    $$("[data-sfilter]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.sfilter === "all")));
+    $$("[data-dfilter]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.dfilter === "all")));
+    $$(".defect").forEach((card) => {
+      card.classList.remove("sim-fixed");
+      const btn = card.querySelector(".fixbtn");
+      if (btn) btn.textContent = "Mark fixed (simulation)";
+    });
+    renderAll();
+    renderDefects();
+    toast("Filters and simulation reset.");
+  });
+
+  applyMode(readMode());
+  renderLoads();
+  renderAll();
+</script>
+</body>
+</html>

@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase 9 — MovieArena accessibility</title>
+<style>
+  :root {
+    --ma-neutral-0:#ffffff; --ma-neutral-50:#f6f7f9; --ma-neutral-75:#f2f4f7;
+    --ma-neutral-100:#eef1f5; --ma-neutral-150:#e1e5ec; --ma-neutral-200:#c6cdd9;
+    --ma-neutral-300:#9aa3b2; --ma-neutral-400:#828d9d; --ma-neutral-500:#6f7a8c;
+    --ma-neutral-600:#646e7c; --ma-neutral-700:#5c6472; --ma-neutral-850:#282e38;
+    --ma-neutral-900:#1b2029; --ma-neutral-925:#161a21; --ma-neutral-950:#12151b;
+    --ma-neutral-1000:#0c0e12;
+    --ma-accent-400:#ff7a62; --ma-accent-500:#ff5c47; --ma-accent-600:#e84632;
+    --ma-accent-700:#c0341f; --ma-warm-300:#ffb066; --ma-warm-400:#ff8a3d;
+    --ma-success-300:#8fcfa5; --ma-warning-300:#e8c37a; --ma-danger-300:#ff9a8f;
+    --ma-info-300:#9db8ff;
+    --motion-instant:0ms; --motion-fast:120ms; --motion-base:160ms; --motion-slow:240ms;
+    --ease-standard:cubic-bezier(.2,.7,.2,1);
+    --ease-exit:cubic-bezier(.4,0,1,1);
+  }
+  :root, [data-theme="dark"] {
+    color-scheme: dark;
+    --surface-page:var(--ma-neutral-1000); --surface-sunken:var(--ma-neutral-950);
+    --surface-card:var(--ma-neutral-925); --surface-raised:var(--ma-neutral-900);
+    --border-subtle:var(--ma-neutral-850); --border-control:var(--ma-neutral-600);
+    --border-emphasis:var(--ma-neutral-500);
+    --content-primary:var(--ma-neutral-100); --content-secondary:var(--ma-neutral-300);
+    --content-tertiary:var(--ma-neutral-400);
+    --action:var(--ma-accent-500); --action-hover:var(--ma-accent-400);
+    --action-pressed:var(--ma-accent-600); --action-ink:var(--ma-neutral-1000);
+    --action-soft:rgba(255,92,71,.16);
+    --focus:var(--ma-warm-400); --link:var(--ma-warm-400); --link-hover:var(--ma-warm-300);
+    --success:var(--ma-success-300); --warning:var(--ma-warning-300);
+    --danger:var(--ma-danger-300); --info:var(--ma-info-300);
+    --switch-off:var(--ma-neutral-600); --switch-knob:var(--ma-neutral-100);
+    --media-bg:#000; --media-chrome:#fff; --media-muted:#b8bec9;
+    --media-track:rgba(255,255,255,.22); --media-fill:var(--ma-accent-500);
+    --media-buffered:rgba(255,255,255,.42); --media-border:rgba(255,255,255,.28);
+    --media-bg-ctl:rgba(12,14,18,.62); --media-focus:var(--ma-warm-400);
+    --skeleton:var(--ma-neutral-900); --skeleton-shine:rgba(255,255,255,.06);
+    --scrim:rgba(7,8,11,.72);
+    --elevation-3:0 24px 70px rgba(0,0,0,.38);
+    --toast-bg:var(--ma-neutral-0); --toast-fg:var(--ma-neutral-1000);
+  }
+  [data-theme="light"] {
+    color-scheme: light;
+    --surface-page:var(--ma-neutral-50); --surface-sunken:var(--ma-neutral-100);
+    --surface-card:var(--ma-neutral-0); --surface-raised:var(--ma-neutral-75);
+    --border-subtle:var(--ma-neutral-150); --border-control:var(--ma-neutral-500);
+    --border-emphasis:var(--ma-neutral-600);
+    --content-primary:var(--ma-neutral-950); --content-secondary:var(--ma-neutral-700);
+    --content-tertiary:var(--ma-neutral-600);
+    --action:var(--ma-accent-500); --action-hover:var(--ma-accent-600);
+    --action-pressed:var(--ma-accent-600); --action-ink:var(--ma-neutral-950);
+    --action-soft:rgba(255,92,71,.12);
+    --focus:var(--ma-accent-700); --link:var(--ma-accent-700); --link-hover:#972817;
+    --success:#2f6b3a; --warning:#8a5a12; --danger:#b3261e; --info:#2f5bb7;
+    --switch-off:var(--ma-neutral-500); --switch-knob:var(--ma-neutral-0);
+    --skeleton:var(--ma-neutral-100); --skeleton-shine:rgba(18,21,27,.05);
+    --scrim:rgba(18,21,27,.48);
+    --elevation-3:0 24px 60px rgba(35,48,80,.18);
+    --toast-bg:var(--ma-neutral-950); --toast-fg:var(--ma-neutral-0);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin:0; font-family:"Inter","Segoe UI",system-ui,-apple-system,sans-serif;
+    background:var(--surface-page); color:var(--content-primary);
+    font-size:.875rem; line-height:1.6;
+    transition:background-color 150ms ease, color 150ms ease;
+  }
+  html.switching, html.switching * { transition:background-color 150ms ease, border-color 150ms ease, color 150ms ease !important; }
+  :focus-visible { outline:2px solid var(--focus); outline-offset:2px; border-radius:4px; }
+  a { color:var(--link); text-underline-offset:2px; }
+  a:hover { color:var(--link-hover); }
+  button, input, select { font:inherit; }
+  h1,h2,h3,h4,p { margin:0; }
+
+  .skip {
+    position:fixed; left:12px; top:-80px; z-index:200;
+    background:var(--action); color:var(--action-ink); font-weight:800; font-size:.78rem;
+    padding:10px 14px; border-radius:8px; text-decoration:none;
+    transition:top var(--motion-fast) var(--ease-standard);
+  }
+  .skip:focus { top:12px; }
+
+  .bar {
+    position:sticky; top:0; z-index:40; display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:10px 18px; background:var(--surface-page); border-bottom:1px solid var(--border-subtle);
+  }
+  .brand { display:flex; align-items:baseline; gap:9px; margin-right:auto; }
+  .brand strong { font-size:.92rem; letter-spacing:-.01em; }
+  .brand span { color:var(--content-secondary); font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; }
+  .locked { color:var(--content-secondary); font-size:.6rem; font-weight:650; border:1px solid var(--border-subtle); border-radius:999px; padding:4px 8px; }
+  .seg { display:inline-flex; padding:3px; gap:2px; background:var(--surface-sunken); border:1px solid var(--border-subtle); border-radius:9px; }
+  .seg button {
+    appearance:none; border:0; background:transparent; color:var(--content-secondary);
+    font-size:.68rem; font-weight:650; padding:6px 9px; border-radius:6px; cursor:pointer;
+    transition:background-color var(--motion-fast), color var(--motion-fast);
+  }
+  .seg button:hover { color:var(--content-primary); background:var(--surface-raised); }
+  .seg button.on { background:var(--action); color:var(--action-ink); }
+  .resolved { color:var(--content-secondary); font-size:.62rem; min-width:76px; font-variant-numeric:tabular-nums; }
+  .toggle {
+    appearance:none; border:1px solid var(--border-control); background:transparent; color:var(--content-primary);
+    font-size:.66rem; font-weight:700; padding:6px 10px; border-radius:7px; cursor:pointer; display:inline-flex; align-items:center; gap:7px;
+    min-height:38px; transition:background-color var(--motion-fast), border-color var(--motion-fast);
+  }
+  .toggle:hover { background:var(--surface-raised); border-color:var(--border-emphasis); }
+  .toggle .dot { width:8px; height:8px; border-radius:50%; background:var(--content-tertiary); }
+  .toggle[aria-pressed="true"] { border-color:var(--focus); }
+  .toggle[aria-pressed="true"] .dot { background:var(--focus); }
+
+  .wrap { max-width:1120px; margin:0 auto; padding:28px 18px 80px; }
+  .intro { max-width:800px; margin-bottom:26px; }
+  .eyebrow { color:var(--link); font-size:.62rem; font-weight:750; letter-spacing:.14em; text-transform:uppercase; }
+  h1 { font-size:clamp(1.8rem,3.8vw,2.7rem); line-height:1.05; letter-spacing:-.03em; font-weight:650; margin:9px 0 10px; }
+  .intro p { color:var(--content-secondary); font-size:.86rem; max-width:70ch; }
+
+  .block { margin-top:36px; }
+  .block-head { display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:11px; }
+  .block-head h2 { font-size:1rem; font-weight:650; letter-spacing:-.01em; }
+  .block-head p { color:var(--content-secondary); font-size:.68rem; max-width:66ch; }
+
+  .panel { background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:14px; padding:16px; }
+  .split { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .stack { display:flex; flex-direction:column; gap:10px; }
+  .row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .note { color:var(--content-secondary); font-size:.65rem; line-height:1.55; }
+  .note b { color:var(--content-primary); }
+  code { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.92em; }
+
+  .btn {
+    appearance:none; border:1px solid var(--border-control); background:transparent; color:var(--content-primary);
+    min-height:44px; padding:9px 15px; border-radius:8px; font-size:.75rem; font-weight:700; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    transition:background-color var(--motion-fast), border-color var(--motion-fast), transform var(--motion-fast);
+  }
+  .btn:hover { border-color:var(--border-emphasis); background:var(--surface-raised); }
+  .btn:active { background:var(--surface-sunken); transform:scale(.98); }
+  .btn.primary { background:var(--action); border-color:transparent; color:var(--action-ink); }
+  .btn.primary:hover { background:var(--action-hover); }
+  .btn.primary:active { background:var(--action-pressed); }
+  .btn.sm { min-height:32px; padding:5px 10px; font-size:.68rem; }
+  .btn:disabled { color:var(--content-tertiary); background:var(--surface-raised); border-color:var(--border-subtle); cursor:not-allowed; transform:none; }
+
+  /* contrast lab */
+  .pairs { width:100%; border-collapse:collapse; font-size:.68rem; }
+  .pairs th {
+    text-align:left; color:var(--content-secondary); font-size:.58rem; font-weight:750;
+    letter-spacing:.09em; text-transform:uppercase; padding:6px 8px; border-bottom:1px solid var(--border-subtle);
+  }
+  .pairs td { padding:7px 8px; border-bottom:1px solid var(--border-subtle); vertical-align:middle; }
+  .pairs tr:last-child td { border-bottom:0; }
+  .swatch { display:inline-block; width:34px; height:22px; border-radius:5px; border:1px solid var(--border-control); vertical-align:middle; }
+  .ratio { font-variant-numeric:tabular-nums; font-weight:750; }
+  .pass { color:var(--success); font-weight:750; }
+  .fail { color:var(--danger); font-weight:750; }
+  .fill-demo { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px; }
+  .fill-demo .sample { min-height:44px; padding:0 16px; border-radius:8px; display:inline-flex; align-items:center; font-weight:750; font-size:.76rem; }
+  .ink-bad { background:var(--action); color:#fff; }
+  .ink-good { background:var(--action); color:var(--action-ink); }
+
+  /* focus tour */
+  .tour-shell { border:1px solid var(--border-control); border-radius:12px; overflow:hidden; background:var(--surface-page); }
+  .tour-head { display:flex; align-items:center; gap:8px; padding:9px 12px; border-bottom:1px solid var(--border-subtle); }
+  .tour-head b { font-size:.72rem; margin-right:auto; }
+  .tour-body { padding:12px; display:flex; flex-direction:column; gap:8px; }
+  .tour-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .tour-card {
+    display:flex; flex-direction:column; align-items:flex-start; gap:1px; min-width:150px;
+    border:1px solid var(--border-subtle); background:var(--surface-card); border-radius:8px;
+    padding:8px 10px; color:var(--content-primary); text-decoration:none; cursor:pointer;
+    min-height:44px; justify-content:center;
+  }
+  .tour-card:hover, .tour-card:focus-visible { border-color:var(--border-emphasis); }
+  .tour-card small { color:var(--content-secondary); font-size:.6rem; }
+  .tour-order { font-size:.62rem; color:var(--content-secondary); font-variant-numeric:tabular-nums; }
+  .tour-order b { color:var(--link); }
+  .fake-input {
+    width:100%; max-width:320px; min-height:44px; padding:8px 12px; border-radius:8px;
+    border:1px solid var(--border-control); background:var(--surface-sunken); color:var(--content-primary);
+  }
+
+  /* targets */
+  .target-row { display:flex; gap:18px; align-items:flex-end; flex-wrap:wrap; }
+  .target-item { display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .target-box { position:relative; display:grid; place-items:center; border:1px dashed var(--border-control); border-radius:6px; }
+  .target-box .actual { background:var(--action); color:var(--action-ink); border-radius:5px; display:grid; place-items:center; font-size:.62rem; font-weight:800; }
+  .target-box .overlay44 {
+    position:absolute; inset:50% auto auto 50%; width:44px; height:44px; transform:translate(-50%,-50%);
+    border:2px solid var(--info); border-radius:6px; pointer-events:none; opacity:0;
+  }
+  html.show-targets .target-box .overlay44 { opacity:1; }
+  .target-caption { font-size:.58rem; color:var(--content-secondary); text-align:center; }
+
+  /* search combobox */
+  .combo-wrap { position:relative; max-width:420px; }
+  .combo-input {
+    width:100%; min-height:44px; padding:9px 12px; border-radius:8px;
+    border:1px solid var(--border-control); background:var(--surface-sunken); color:var(--content-primary);
+  }
+  .combo-input:focus { border-color:var(--focus); }
+  .combo-list {
+    position:absolute; left:0; right:0; top:calc(100% + 5px); z-index:20;
+    background:var(--surface-card); border:1px solid var(--border-control); border-radius:10px;
+    box-shadow:var(--elevation-3); overflow:hidden;
+  }
+  .combo-list[hidden] { display:none; }
+  .combo-opt {
+    display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+    padding:9px 12px; min-height:40px; cursor:pointer; color:var(--content-primary); text-decoration:none;
+  }
+  .combo-opt:hover, .combo-opt:focus-visible { background:var(--action-soft); }
+  .combo-opt small { color:var(--content-secondary); font-size:.62rem; }
+
+  /* player */
+  .player-wrap { border-radius:12px; overflow:hidden; background:#000; }
+  .player { position:relative; aspect-ratio:16/9; background:#000; display:flex; align-items:flex-end; overflow:hidden; }
+  .player .stage { position:absolute; inset:0; background:linear-gradient(135deg,#2a2119,#1b2029 48%,#000); }
+  .player .subtitle {
+    position:absolute; left:50%; bottom:86px; transform:translateX(-50%);
+    background:rgba(0,0,0,.72); color:#fff; font-size:.72rem; padding:4px 8px; border-radius:3px; white-space:nowrap;
+  }
+  .player .big-play {
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:56px; height:56px; border-radius:50%; border:1px solid var(--media-border);
+    background:var(--media-bg-ctl); color:#fff; display:grid; place-items:center; cursor:pointer;
+  }
+  .player.playing .big-play { opacity:0; visibility:hidden; pointer-events:none; }
+  .player .big-play svg { width:22px; height:22px; margin-left:2px; }
+  .player .controls {
+    position:relative; z-index:2; width:100%; padding:10px 12px 12px;
+    display:flex; flex-direction:column; gap:8px;
+    background:linear-gradient(180deg, transparent, rgba(0,0,0,.78));
+    opacity:0; visibility:hidden; transition:opacity var(--motion-base) var(--ease-standard), visibility 0s linear var(--motion-base);
+  }
+  .player .controls.visible { opacity:1; visibility:visible; transition:opacity var(--motion-base) var(--ease-standard); }
+  .player .progress {
+    height:24px; display:flex; align-items:center; position:relative; cursor:pointer;
+    border-radius:6px;
+  }
+  .player .progress .track { position:relative; width:100%; height:4px; border-radius:3px; background:var(--media-track); }
+  .player .progress .buffered { position:absolute; inset:0 auto 0 0; width:70%; background:var(--media-buffered); border-radius:3px; }
+  .player .progress .played { position:absolute; inset:0 auto 0 0; width:48%; background:var(--media-fill); border-radius:3px; }
+  .player .progress .knob {
+    position:absolute; top:50%; left:48%; width:12px; height:12px; border-radius:50%;
+    background:var(--media-fill); transform:translate(-50%,-50%);
+  }
+  .player .progress:focus-visible { outline:2px solid var(--media-focus); outline-offset:2px; }
+  .player .row { color:var(--media-muted); font-size:.66rem; font-variant-numeric:tabular-nums; }
+  .player .row svg { width:20px; height:20px; color:#fff; }
+  .media-btn {
+    appearance:none; border:0; background:transparent; color:#fff; padding:6px; border-radius:6px;
+    min-width:40px; min-height:40px; cursor:pointer; display:grid; place-items:center;
+    transition:background-color var(--motion-fast);
+  }
+  .media-btn:hover { background:rgba(255,255,255,.14); }
+  .media-btn:focus-visible { outline-color:var(--media-focus); }
+  .grow { flex:1; }
+  .player .hint { position:absolute; left:10px; top:10px; z-index:2; color:#fff; background:rgba(0,0,0,.55); border:1px solid var(--media-border); border-radius:6px; padding:3px 7px; font-size:.55rem; }
+  .sr-line { margin-top:9px; color:var(--content-secondary); font-size:.65rem; }
+  .sr-line b { color:var(--content-primary); }
+
+  /* dialog */
+  .scrim {
+    position:fixed; inset:0; background:var(--scrim); z-index:90;
+    display:grid; place-items:center; padding:20px;
+    opacity:0; visibility:hidden; transition:opacity var(--motion-base) var(--ease-standard), visibility 0s linear var(--motion-base);
+  }
+  .scrim.open { opacity:1; visibility:visible; transition:opacity var(--motion-base) var(--ease-standard); }
+  .sheet {
+    width:min(520px,100%); background:var(--surface-card); border:1px solid var(--border-subtle);
+    border-radius:14px; box-shadow:var(--elevation-3); padding:17px;
+  }
+  .sheet-head { display:flex; align-items:flex-start; gap:10px; }
+  .sheet-head h3 { font-size:1rem; font-weight:650; margin-right:auto; }
+  .sheet-body { color:var(--content-secondary); font-size:.78rem; margin-top:8px; }
+  .sheet-foot { display:flex; justify-content:flex-end; gap:8px; margin-top:16px; }
+  .icon-btn {
+    appearance:none; border:1px solid var(--border-control); background:transparent; color:var(--content-secondary);
+    width:40px; height:40px; border-radius:7px; display:grid; place-items:center; cursor:pointer;
+    transition:background-color var(--motion-fast), border-color var(--motion-fast), color var(--motion-fast);
+  }
+  .icon-btn:hover { border-color:var(--border-emphasis); color:var(--content-primary); background:var(--surface-raised); }
+
+  /* form */
+  .field { display:flex; flex-direction:column; gap:5px; max-width:360px; }
+  .field label { font-size:.68rem; font-weight:700; color:var(--content-secondary); }
+  .field input {
+    min-height:44px; padding:9px 12px; border-radius:8px; border:1px solid var(--border-control);
+    background:var(--surface-sunken); color:var(--content-primary);
+  }
+  .field input[aria-invalid="true"] { border-color:var(--danger); border-width:2px; }
+  .err { color:var(--danger); font-size:.66rem; font-weight:650; }
+
+  /* native demo */
+  .phone {
+    width:min(320px,100%); border:1px solid var(--border-control); border-radius:18px; overflow:hidden;
+    background:var(--surface-page);
+  }
+  .phone-head { padding:10px 12px; border-bottom:1px solid var(--border-subtle); font-size:.7rem; font-weight:750; }
+  .phone-body { min-height:120px; padding:14px 12px; }
+  .phone-tabs { display:flex; border-top:1px solid var(--border-subtle); }
+  .phone-tabs button {
+    flex:1; appearance:none; border:0; background:transparent; color:var(--content-secondary);
+    padding:9px 2px; min-height:48px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px;
+    font-size:.58rem; font-weight:700;
+  }
+  .phone-tabs button[aria-selected="true"] { color:var(--content-primary); box-shadow:inset 0 2px 0 var(--action); }
+  .phone-tabs .glyph { font-size:16px; }
+  .phone-title { font-size:.84rem; font-weight:700; }
+  .phone-sub { color:var(--content-secondary); font-size:.66rem; margin-top:3px; }
+  .phone-heart {
+    margin-top:10px; appearance:none; border:1px solid var(--border-control); background:transparent;
+    color:var(--content-primary); min-height:44px; padding:8px 12px; border-radius:8px; font-size:.7rem; font-weight:700;
+    display:inline-flex; align-items:center; gap:7px; cursor:pointer;
+  }
+  .phone-heart[aria-pressed="true"] { border-color:var(--action); color:var(--link); }
+
+  /* live log */
+  .log { border:1px solid var(--border-subtle); border-radius:8px; background:var(--surface-sunken); padding:9px 11px; min-height:64px; font-size:.66rem; color:var(--content-secondary); }
+  .log b { color:var(--content-primary); }
+
+  /* forced colours simulation */
+  html.forced {
+    --surface-page:#000; --surface-sunken:#000; --surface-card:#000; --surface-raised:#000;
+    --border-subtle:#fff; --border-control:#fff; --border-emphasis:#fff;
+    --content-primary:#fff; --content-secondary:#fff; --content-tertiary:#fff;
+    --action:#ff0; --action-hover:#ff0; --action-pressed:#ff0; --action-ink:#000;
+    --focus:#0ff; --link:#0ff; --link-hover:#0ff;
+    --success:#0f0; --warning:#ff0; --danger:#f66; --info:#0ff;
+  }
+  html.forced .btn, html.forced .toggle, html.forced .tour-card, html.forced .combo-list,
+  html.forced .combo-input, html.forced .fake-input, html.forced .panel, html.forced .sheet,
+  html.forced .icon-btn, html.forced .field input, html.forced .phone, html.forced .target-box { border-width:2px !important; }
+  html.forced .btn.primary, html.forced .seg button.on, html.forced .fill-demo .sample { background:#ff0 !important; color:#000 !important; }
+  html.forced .player .controls, html.forced .player .subtitle { background:#000 !important; color:#fff !important; }
+  html.forced .swatch { outline:1px solid #fff; }
+
+  /* reduced motion */
+  :root.reduce-motion *, :root.reduce-motion *::before, :root.reduce-motion *::after {
+    animation-duration:.001ms !important; animation-iteration-count:1 !important;
+    transition-duration:.001ms !important; transition-delay:0s !important; scroll-behavior:auto !important;
+  }
+  :root.reduce-motion .spinner { animation-duration:.7s !important; animation-iteration-count:infinite !important; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior:auto; }
+    *, *::before, *::after {
+      animation-duration:.001ms !important; animation-iteration-count:1 !important;
+      transition-duration:.001ms !important; transition-delay:0s !important;
+    }
+    .spinner { animation-duration:.7s !important; animation-iteration-count:infinite !important; }
+  }
+  .spinner {
+    width:18px; height:18px; border-radius:50%;
+    border:2px solid var(--border-control); border-top-color:var(--content-primary);
+    animation:spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  .foot { margin-top:34px; padding-top:14px; border-top:1px solid var(--border-subtle); color:var(--content-secondary); font-size:.62rem; max-width:84ch; }
+  .foot b { color:var(--content-primary); }
+
+  @media (max-width:760px) {
+    .split { grid-template-columns:1fr; }
+    .brand span { display:none; }
+    .player .subtitle { bottom:120px; white-space:normal; max-width:80%; text-align:center; }
+    .player .controls { gap:6px; }
+    .player .row { flex-wrap:wrap; }
+  }
+</style>
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="bar">
+  <div class="brand"><strong>MovieArena</strong><span>Phase 9 · accessibility</span></div>
+  <span class="locked">Target WCAG 2.2 AA</span>
+  <div class="seg" role="group" aria-label="Theme mode">
+    <button data-mode="system">System</button>
+    <button data-mode="dark" class="on">Dark</button>
+    <button data-mode="light">Light</button>
+  </div>
+  <span class="resolved" id="resolved">dark</span>
+  <button class="toggle" id="targets-toggle" aria-pressed="false"><span class="dot"></span>Target overlay</button>
+  <button class="toggle" id="forced-toggle" aria-pressed="false"><span class="dot"></span>Forced colours</button>
+</header>
+
+<main class="wrap" id="main" tabindex="-1">
+
+  <section class="intro">
+    <div class="eyebrow">Phase 9 draft v0.1</div>
+    <h1>Accessible before it is beautiful.</h1>
+    <p>Every task has a keyboard path, every state is announced, and focus is always visible. This page is a working audit aid: check contrast, walk the focus order, operate the player without a pointer, trap a dialog, resize a target, and approximate forced colours. Ratios are computed live from the same tokens the product uses. No glow, no halo, no animated shadow.</p>
+  </section>
+
+  <section class="block" id="contrast">
+    <div class="block-head">
+      <h2>Contrast lab</h2>
+      <p>Computed from token pairs. 4.5:1 for normal text, 3:1 for large text and non-text controls. White on the accent is the trap.</p>
+    </div>
+    <div class="panel">
+      <table class="pairs">
+        <thead><tr><th>Pair</th><th>Sample</th><th>Ratio</th><th>Normal text</th><th>Non-text</th></tr></thead>
+        <tbody id="contrast-rows"></tbody>
+      </table>
+      <div class="fill-demo">
+        <span class="sample ink-bad" id="bad-fill">White on accent · current</span>
+        <span class="sample ink-good" id="good-fill">Dark ink on accent · locked</span>
+        <span class="note" id="fill-note">The accent hue does not change; only the label ink does.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="focus-order">
+    <div class="block-head">
+      <h2>Focus order</h2>
+      <p>Press Start then Tab through the sample shell. The counter shows the order. Skip link first, then header, navigation, main actions, cards. No positive tabindex.</p>
+    </div>
+    <div class="split">
+      <div class="panel">
+        <div class="tour-shell">
+          <div class="tour-head">
+            <b>MovieArena shell</b>
+            <span class="tour-order">Stop <b id="tour-count">0</b></span>
+            <button class="btn sm" id="tour-reset">Reset</button>
+          </div>
+          <div class="tour-body" id="tour-body">
+            <a class="skip" href="#tour-body" style="position:static;transform:none;display:inline-block;width:max-content">Skip to content</a>
+            <input class="fake-input" id="tour-search" type="search" aria-label="Search the catalog" placeholder="Search titles, genres, sources…">
+            <div class="tour-row">
+              <a class="tour-card" href="#focus-order"><b>Home</b><small>nav</small></a>
+              <a class="tour-card" href="#focus-order"><b>Movies</b><small>nav</small></a>
+              <a class="tour-card" href="#focus-order"><b>My List</b><small>nav</small></a>
+            </div>
+            <div class="tour-row">
+              <button class="btn primary" id="tour-play">Play</button>
+              <button class="btn" id="tour-save">My List</button>
+            </div>
+            <div class="tour-row">
+              <a class="tour-card" href="#focus-order"><b>Frieren</b><small>28 episodes · free</small></a>
+              <a class="tour-card" href="#focus-order"><b>Caligari</b><small>1920 · public domain</small></a>
+            </div>
+          </div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn primary sm" id="tour-start">Start focus tour</button>
+          <span class="note" id="tour-status" role="status" aria-live="polite">Idle. Focus will move automatically, one stop at a time.</span>
+        </div>
+      </div>
+      <div class="panel stack">
+        <h3 style="font-size:.68rem;font-weight:750;letter-spacing:.09em;text-transform:uppercase;color:var(--content-secondary)">What the contract requires</h3>
+        <p class="note"><b>1.</b> The skip link is the first stop and reaches the main region.</p>
+        <p class="note"><b>2.</b> DOM order is visual order. No <code>tabindex="1"</code>.</p>
+        <p class="note"><b>3.</b> Every ring is the same 2px hard outline at 2px offset.</p>
+        <p class="note"><b>4.</b> Cards are one target; the heart is a separate button.</p>
+        <p class="note"><b>5.</b> Focus is never covered by the sticky header or tab bar.</p>
+        <p class="note"><b>6.</b> A route change moves focus to the new <code>h1</code>; Back returns it to the trigger.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="targets">
+    <div class="block-head">
+      <h2>Target sizes</h2>
+      <p>WCAG 2.2 floor is 24px. MovieArena targets 44px for primary controls. Toggle the overlay in the header to compare against the 44px box.</p>
+    </div>
+    <div class="panel">
+      <div class="target-row">
+        <div class="target-item">
+          <div class="target-box" style="width:64px;height:64px"><span class="actual" style="width:24px;height:24px">24</span><span class="overlay44"></span></div>
+          <span class="target-caption">Absolute floor<br>24 × 24</span>
+        </div>
+        <div class="target-item">
+          <div class="target-box" style="width:76px;height:76px"><span class="actual" style="width:32px;height:32px">32</span><span class="overlay44"></span></div>
+          <span class="target-caption">Current icon button<br>32 × 32 · below target</span>
+        </div>
+        <div class="target-item">
+          <div class="target-box" style="width:88px;height:88px"><span class="actual" style="width:44px;height:44px">44</span><span class="overlay44"></span></div>
+          <span class="target-caption">Product target<br>44 × 44</span>
+        </div>
+        <div class="target-item">
+          <div class="target-box" style="width:96px;height:96px"><span class="actual" style="width:48px;height:48px">48</span><span class="overlay44"></span></div>
+          <span class="target-caption">Native tab<br>48 × 48</span>
+        </div>
+      </div>
+      <p class="note" style="margin-top:12px">Inline links inside a sentence are exempt. Anything with a 24px visible size must have 24px of spacing on every side. The player seek bar keeps a 4px visual track but a 44px hit area.</p>
+    </div>
+  </section>
+
+  <section class="block" id="search">
+    <div class="block-head">
+      <h2>Search combobox</h2>
+      <p>Type “fri”, then use the arrow keys. Focus stays in the field until you move into results; Escape returns. The result count is announced once.</p>
+    </div>
+    <div class="split">
+      <div class="panel">
+        <div class="combo-wrap">
+          <input class="combo-input" id="combo-input" type="text" role="combobox"
+            aria-label="Search the catalog" aria-autocomplete="list" aria-controls="combo-list"
+            aria-expanded="false" autocomplete="off" placeholder="Search titles, genres, sources…">
+          <div class="combo-list" id="combo-list" role="listbox" aria-label="Search results" hidden></div>
+        </div>
+        <div class="row" style="margin-top:11px">
+          <span class="note" id="combo-count" role="status" aria-live="polite">No search yet.</span>
+        </div>
+      </div>
+      <div class="panel stack">
+        <h3 style="font-size:.68rem;font-weight:750;letter-spacing:.09em;text-transform:uppercase;color:var(--content-secondary)">Why not a dialog</h3>
+        <p class="note">The current header popup is <code>role="dialog"</code> with <code>aria-expanded</code> on a plain input. That mixes two patterns. Phase 9 locks one: combobox + listbox, options in the DOM, focus moves into options, Escape closes and restores the field.</p>
+        <p class="note">Results are links. <code>Enter</code> follows the focused option. The live region announces the count, not every keystroke.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="player-demo">
+    <div class="block-head">
+      <h2>Player without a pointer</h2>
+      <p>Focus the seek slider and use arrows, Home, End, PageUp, PageDown. Controls do not hide while focus is inside them. Captions toggle with the button or C.</p>
+    </div>
+    <div class="panel">
+      <div class="player-wrap">
+        <div class="player" id="player">
+          <div class="stage"></div>
+          <span class="hint">Keyboard: Space, J/K/L, M, C, F</span>
+          <div class="subtitle" id="subtitle">The city was never the same after that winter.</div>
+          <button class="big-play" id="big-play" aria-label="Play">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+          <div class="controls" id="pcontrols">
+            <div class="progress" id="progress" role="slider" tabindex="0"
+              aria-label="Playback position" aria-valuemin="0" aria-valuemax="100" aria-valuenow="48"
+              aria-valuetext="12:34 of 24:10">
+              <div class="track"><span class="buffered"></span><span class="played" id="played"></span><span class="knob" id="knob"></span></div>
+            </div>
+            <div class="row">
+              <button class="media-btn" id="play-btn" aria-label="Play">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+              </button>
+              <span id="time" aria-live="off">12:34 / 24:10</span>
+              <span class="grow"></span>
+              <button class="media-btn" id="cc-btn" aria-label="Captions" aria-pressed="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 10h3M7 14h5M14 10h3M14 14h3"/></svg>
+              </button>
+              <button class="media-btn" aria-label="Settings">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.4 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12"/></svg>
+              </button>
+              <button class="media-btn" aria-label="Fullscreen">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="sr-line" id="player-status" role="status" aria-live="polite">Paused at 12:34. Captions on.</p>
+      <p class="note" style="margin-top:8px">The slider reports <b id="value-now">12:34 of 24:10</b>. The caption line is <b>not</b> a live region; only playback state changes are announced.</p>
+    </div>
+  </section>
+
+  <section class="block" id="dialog">
+    <div class="block-head">
+      <h2>Dialog focus trap</h2>
+      <p>Open, then Tab. Focus cycles inside. Escape closes and returns to the trigger. The page behind is inert for the pointer and the keyboard.</p>
+    </div>
+    <div class="panel">
+      <div class="row">
+        <button class="btn primary" id="open-sheet">Remove from My List</button>
+        <button class="btn" id="open-sheet-2">Open from second trigger</button>
+      </div>
+      <p class="note" style="margin-top:9px">The dialog has <code>aria-modal="true"</code>, a labelled title, a described body, and a close button with a name.</p>
+    </div>
+  </section>
+
+  <section class="block" id="forms">
+    <div class="block-head">
+      <h2>Forms and errors</h2>
+      <p>Submit empty to see an inline error with <code>role="alert"</code>. The message says what to do, not just that something is wrong.</p>
+    </div>
+    <div class="split">
+      <div class="panel">
+        <form id="demo-form" novalidate>
+          <div class="field">
+            <label for="email">Email for your magic link</label>
+            <input id="email" type="email" autocomplete="email" aria-describedby="email-help email-error" placeholder="you@example.com">
+            <span class="note" id="email-help">We send a sign-in link. No password needed.</span>
+            <span class="err" id="email-error" role="alert" hidden></span>
+          </div>
+          <div class="row" style="margin-top:12px">
+            <button class="btn primary" type="submit">Send link</button>
+          </div>
+        </form>
+        <p class="note" id="form-status" role="status" aria-live="polite" style="margin-top:10px"></p>
+      </div>
+      <div class="panel stack">
+        <h3 style="font-size:.68rem;font-weight:750;letter-spacing:.09em;text-transform:uppercase;color:var(--content-secondary)">Rules</h3>
+        <p class="note">Visible label, persistent help text, inline alert, and a summary when more than one field fails.</p>
+        <p class="note">Required is stated in text and with the <code>required</code> attribute. The error border is not the only signal.</p>
+        <p class="note">No puzzle, no memorised code, no time limit that expires while typing.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="announce">
+    <div class="block-head">
+      <h2>Live regions</h2>
+      <p>One stable region per event type. Activate a button and read the log below; the same text is announced politely.</p>
+    </div>
+    <div class="split">
+      <div class="panel">
+        <div class="row">
+          <button class="btn sm" data-announce="Saved to My List">Save</button>
+          <button class="btn sm" data-announce="Removed from My List">Remove</button>
+          <button class="btn sm" data-announce="Could not reach the source. Try again.">Error</button>
+          <button class="btn sm" data-announce="14 episodes match 12.">Filter</button>
+        </div>
+        <div class="log" id="log" style="margin-top:12px">No announcements yet.</div>
+        <p class="note" style="margin-top:8px" role="status" aria-live="polite" aria-atomic="true" id="live"></p>
+      </div>
+      <div class="panel stack">
+        <h3 style="font-size:.68rem;font-weight:750;letter-spacing:.09em;text-transform:uppercase;color:var(--content-secondary)">Announcement budget</h3>
+        <p class="note"><b>Polite:</b> saved, removed, filter count, playback state.</p>
+        <p class="note"><b>Assertive:</b> errors only. Never use assertive for success.</p>
+        <p class="note"><b>Never:</b> subtitle lines, hover, scroll position, clock ticks.</p>
+        <p class="note">The node is created once and only its text changes. Recreating a live region loses the announcement.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="native">
+    <div class="block-head">
+      <h2>Native parity</h2>
+      <p>The tab bar exposes role and selected state; the heart is a separate labelled button, not nested inside the card.</p>
+    </div>
+    <div class="split">
+      <div class="panel" style="display:flex;justify-content:center">
+        <div class="phone">
+          <div class="phone-head">MovieArena · mobile</div>
+          <div class="phone-body" id="phone-panel" role="tabpanel" aria-label="Home">
+            <div class="phone-title">Frieren: Beyond Journey's End</div>
+            <div class="phone-sub">28 episodes · free · official</div>
+            <button class="phone-heart" id="heart" aria-pressed="false" aria-label="Save Frieren: Beyond Journey's End">
+              <span aria-hidden="true" id="heart-glyph">♡</span><span id="heart-label">Save</span>
+            </button>
+          </div>
+          <div class="phone-tabs" role="tablist" aria-label="Primary">
+            <button role="tab" aria-selected="true" aria-controls="phone-panel" data-tab="home"><span class="glyph" aria-hidden="true">⌂</span>Home</button>
+            <button role="tab" aria-selected="false" aria-controls="phone-panel" data-tab="search"><span class="glyph" aria-hidden="true">⌕</span>Search</button>
+            <button role="tab" aria-selected="false" aria-controls="phone-panel" data-tab="list"><span class="glyph" aria-hidden="true">♡</span>My List</button>
+            <button role="tab" aria-selected="false" aria-controls="phone-panel" data-tab="more"><span class="glyph" aria-hidden="true">⋯</span>More</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel stack">
+        <h3 style="font-size:.68rem;font-weight:750;letter-spacing:.09em;text-transform:uppercase;color:var(--content-secondary)">Required props</h3>
+        <p class="note"><b>Tab:</b> <code>accessibilityRole="tab"</code>, <code>accessibilityState={{ selected }}</code>.</p>
+        <p class="note"><b>Heart:</b> its own button, label “Save …” / “Remove …”, state selected, 44px hit area.</p>
+        <p class="note"><b>Watch open:</b> focus moves to the back button and title; closing returns it to the card.</p>
+        <p class="note"><b>WebView:</b> native mirror controls for play, seek, mute, captions, fullscreen.</p>
+        <p class="note"><b>Type:</b> 200% dynamic type must not clip. Decorative images are not focusable.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="checks">
+    <div class="block-head">
+      <h2>Mode checks</h2>
+      <p>Approximate the modes that break most interfaces. The accent hue never changes; the system colours take over.</p>
+    </div>
+    <div class="split">
+      <div class="panel">
+        <div class="row">
+          <button class="btn" id="forced-inline">Toggle forced colours</button>
+          <button class="btn" id="rm-inline">Toggle reduced motion</button>
+          <div class="spinner" role="status" aria-label="Loading"></div>
+        </div>
+        <p class="note" style="margin-top:10px">Forced colours replaces the surface with black, borders with white, and the action with yellow. Focus becomes cyan. The spinner is the documented exception that keeps rotating under reduced motion.</p>
+      </div>
+      <div class="panel">
+        <table class="pairs">
+          <thead><tr><th>Mode</th><th>Requirement</th></tr></thead>
+          <tbody>
+            <tr><td>Forced colours</td><td>All controls keep a border; state uses system Highlight</td></tr>
+            <tr><td>prefers-contrast: more</td><td>Borders step up; translucency removed</td></tr>
+            <tr><td>Reduced motion</td><td>No translate, fade, shimmer, or rotation of content</td></tr>
+            <tr><td>200% zoom</td><td>No horizontal scroll; player bar wraps</td></tr>
+            <tr><td>400% reflow</td><td>320px viewport, one column, no clipping</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <p class="foot"><b>Preview only.</b> This page is an accessibility decision aid, not the production stylesheet. The contract, 40-item gap matrix, keyboard map, and gate decisions are in <code>docs/design/phase-9-accessibility.md</code>. The audit is a source and computed-contrast review; it is not a claim of completed user testing.</p>
+</main>
+
+<div class="scrim" id="scrim" role="presentation">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" aria-describedby="sheet-body" tabindex="-1" id="sheet">
+    <div class="sheet-head">
+      <h3 id="sheet-title">Remove from My List?</h3>
+      <button class="icon-btn" id="close-sheet" aria-label="Close dialog">×</button>
+    </div>
+    <div class="sheet-body" id="sheet-body">Frieren: Beyond Journey's End will be removed from this profile. Your watch progress is kept.</div>
+    <div class="sheet-foot">
+      <button class="btn" id="cancel-sheet">Cancel</button>
+      <button class="btn primary" id="confirm-sheet">Remove</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const root = document.documentElement;
+  const reduceMQ = matchMedia('(prefers-reduced-motion: reduce)');
+  let reduced = reduceMQ.matches;
+
+  /* ---------- contrast math ---------- */
+  function srgb(c) { c /= 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
+  function lum(hex) {
+    const h = hex.replace('#', '');
+    const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+    return 0.2126 * srgb(r) + 0.7152 * srgb(g) + 0.0722 * srgb(b);
+  }
+  function ratio(a, b) {
+    const la = lum(a), lb = lum(b);
+    return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+  }
+  const pairs = [
+    ['Primary text · dark', '#eef1f5', '#0c0e12', 4.5, 3],
+    ['Secondary text · dark', '#9aa3b2', '#0c0e12', 4.5, 3],
+    ['Accent text · dark', '#ff5c47', '#0c0e12', 4.5, 3],
+    ['Dark ink on accent', '#0c0e12', '#ff5c47', 4.5, 3],
+    ['White on accent (banned)', '#ffffff', '#ff5c47', 4.5, 3],
+    ['Focus ring · dark', '#ff8a3d', '#0c0e12', 3, 3],
+    ['Control border · dark', '#646e7c', '#0c0e12', 3, 3],
+    ['Secondary text · light', '#5c6472', '#f6f7f9', 4.5, 3],
+    ['Accent text · light', '#c0341f', '#f6f7f9', 4.5, 3],
+    ['Dark ink on accent · light', '#12151b', '#ff5c47', 4.5, 3],
+    ['Focus ring · light', '#c0341f', '#f6f7f9', 3, 3],
+    ['Control border · light', '#6f7a8c', '#f6f7f9', 3, 3]
+  ];
+  const rows = document.getElementById('contrast-rows');
+  pairs.forEach(([name, fg, bg, textNeed, uiNeed]) => {
+    const r = ratio(fg, bg);
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + name + '</td>' +
+      '<td><span class="swatch" style="background:' + bg + ';color:' + fg + '">Aa</span></td>' +
+      '<td class="ratio">' + r.toFixed(2) + ':1</td>' +
+      '<td class="' + (r >= textNeed ? 'pass' : 'fail') + '">' + (r >= textNeed ? 'Pass' : 'Fail') + '</td>' +
+      '<td class="' + (r >= uiNeed ? 'pass' : 'fail') + '">' + (r >= uiNeed ? 'Pass' : 'Fail') + '</td>';
+    rows.appendChild(tr);
+  });
+
+  /* ---------- theme ---------- */
+  const mq = matchMedia('(prefers-color-scheme: dark)');
+  const resolvedEl = document.getElementById('resolved');
+  const modeButtons = [...document.querySelectorAll('[data-mode]')];
+  const THEME_KEY = 'ma.preview9.theme';
+  function readMode() { try { return localStorage.getItem(THEME_KEY) || 'system'; } catch (_) { return 'system'; } }
+  function resolvedTheme(mode) { return mode === 'system' ? (mq.matches ? 'dark' : 'light') : mode; }
+  function applyMode(mode, animate) {
+    const theme = resolvedTheme(mode);
+    if (animate && !reduced) {
+      root.classList.add('switching');
+      setTimeout(() => root.classList.remove('switching'), 190);
+    }
+    root.dataset.theme = theme;
+    root.style.colorScheme = theme;
+    try { localStorage.setItem(THEME_KEY, mode); } catch (_) {}
+    modeButtons.forEach(b => {
+      const on = b.dataset.mode === mode;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
+    });
+    resolvedEl.textContent = mode === 'system' ? 'system → ' + theme : theme;
+  }
+  modeButtons.forEach(b => b.addEventListener('click', () => applyMode(b.dataset.mode, true)));
+  mq.addEventListener('change', () => { if (readMode() === 'system') applyMode('system', false); });
+
+  /* ---------- reduced motion ---------- */
+  function applyReduced(value) {
+    reduced = value;
+    root.classList.toggle('reduce-motion', value);
+  }
+  reduceMQ.addEventListener('change', e => { if (e.matches !== reduced) { reduced = e.matches; root.classList.toggle('reduce-motion', reduced); } });
+  document.getElementById('rm-inline').addEventListener('click', () => {
+    applyReduced(!reduced);
+  });
+
+  /* ---------- forced colours ---------- */
+  const forcedBtn = document.getElementById('forced-toggle');
+  const forcedInline = document.getElementById('forced-inline');
+  function setForced(value) {
+    root.classList.toggle('forced', value);
+    forcedBtn.setAttribute('aria-pressed', String(value));
+    forcedInline.setAttribute('aria-pressed', String(value));
+  }
+  forcedBtn.addEventListener('click', () => setForced(!root.classList.contains('forced')));
+  forcedInline.addEventListener('click', () => setForced(!root.classList.contains('forced')));
+
+  /* ---------- target overlay ---------- */
+  const targetBtn = document.getElementById('targets-toggle');
+  targetBtn.addEventListener('click', () => {
+    root.classList.toggle('show-targets');
+    targetBtn.setAttribute('aria-pressed', String(root.classList.contains('show-targets')));
+  });
+
+  /* ---------- focus tour ---------- */
+  const tourBody = document.getElementById('tour-body');
+  const tourCount = document.getElementById('tour-count');
+  const tourStatus = document.getElementById('tour-status');
+  const tourStart = document.getElementById('tour-start');
+  const tourReset = document.getElementById('tour-reset');
+  let tourIndex = 0;
+  function tourStops() {
+    return [...tourBody.querySelectorAll('a[href], button, input')].filter(el => !el.disabled && el.offsetParent !== null);
+  }
+  function markTour() {
+    const active = document.activeElement;
+    const stops = tourStops();
+    const i = stops.indexOf(active);
+    if (i >= 0) { tourIndex = i + 1; tourCount.textContent = String(tourIndex); }
+  }
+  tourBody.addEventListener('focusin', markTour);
+  tourStart.addEventListener('click', () => {
+    tourIndex = 0;
+    tourCount.textContent = '0';
+    const stops = tourStops();
+    if (stops[0]) {
+      stops[0].focus();
+      tourStatus.textContent = 'Stop 1 of ' + stops.length + ': skip link. Press Tab to continue.';
+    }
+  });
+  tourReset.addEventListener('click', () => {
+    tourIndex = 0;
+    tourCount.textContent = '0';
+    tourStatus.textContent = 'Idle. Focus will move automatically, one stop at a time.';
+    tourBody.querySelectorAll('*').forEach(el => { if (el === document.activeElement) el.blur(); });
+  });
+  tourBody.addEventListener('keydown', e => {
+    if (e.key === 'Tab') {
+      const stops = tourStops();
+      const cur = stops.indexOf(document.activeElement);
+      const next = cur + (e.shiftKey ? -1 : 1);
+      if (next >= 0 && next < stops.length) {
+        tourStatus.textContent = 'Stop ' + (next + 1) + ' of ' + stops.length + ': ' + (stops[next].getAttribute('aria-label') || stops[next].textContent.trim().split('\n')[0]) + '.';
+      }
+    }
+  });
+
+  /* ---------- combobox ---------- */
+  const comboInput = document.getElementById('combo-input');
+  const comboList = document.getElementById('combo-list');
+  const comboCount = document.getElementById('combo-count');
+  const TITLES = [
+    { t: 'Frieren: Beyond Journey\'s End', s: '28 episodes · anime' },
+    { t: 'The Cabinet of Dr. Caligari', s: '1920 · public domain' },
+    { t: 'Metropolis', s: '1927 · public domain' },
+    { t: 'Scissor Seven', s: '40 episodes · donghua' },
+    { t: 'Nosferatu', s: '1922 · public domain' },
+    { t: 'Link Click', s: '12 episodes · donghua' }
+  ];
+  function comboRender(q) {
+    comboList.innerHTML = '';
+    const term = q.trim().toLowerCase();
+    if (!term) { comboList.hidden = true; comboInput.setAttribute('aria-expanded', 'false'); comboCount.textContent = 'No search yet.'; return; }
+    const hits = TITLES.filter(x => x.t.toLowerCase().includes(term) || x.s.toLowerCase().includes(term));
+    comboCount.textContent = hits.length + (hits.length === 1 ? ' result for ' : ' results for ') + '“' + q.trim() + '”.';
+    hits.forEach((h, i) => {
+      const a = document.createElement('a');
+      a.className = 'combo-opt';
+      a.href = '#search';
+      a.setAttribute('role', 'option');
+      a.setAttribute('aria-selected', 'false');
+      a.id = 'combo-opt-' + i;
+      a.innerHTML = '<span>' + h.t + '</span><small>' + h.s + '</small>';
+      a.addEventListener('focus', () => {
+        [...comboList.querySelectorAll('.combo-opt')].forEach(o => o.setAttribute('aria-selected', String(o === a)));
+      });
+      a.addEventListener('keydown', e => {
+        if (e.key === 'Escape') { e.preventDefault(); comboClose(true); }
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          const opts = [...comboList.querySelectorAll('.combo-opt')];
+          const at = opts.indexOf(document.activeElement);
+          let next = at + (e.key === 'ArrowDown' ? 1 : -1);
+          if (next < 0) next = opts.length - 1;
+          if (next >= opts.length) next = 0;
+          opts[next].focus();
+        }
+      });
+      comboList.appendChild(a);
+    });
+    comboList.hidden = hits.length === 0;
+    comboInput.setAttribute('aria-expanded', String(hits.length > 0));
+  }
+  function comboClose(returnFocus) {
+    comboList.hidden = true;
+    comboInput.setAttribute('aria-expanded', 'false');
+    if (returnFocus) comboInput.focus();
+  }
+  comboInput.addEventListener('input', () => comboRender(comboInput.value));
+  comboInput.addEventListener('focus', () => { if (comboInput.value.trim()) comboRender(comboInput.value); });
+  comboInput.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { e.preventDefault(); comboClose(true); return; }
+    if (e.key === 'ArrowDown') {
+      const first = comboList.querySelector('.combo-opt');
+      if (first) { e.preventDefault(); first.focus(); }
+    }
+    if (e.key === 'Enter') {
+      const first = comboList.querySelector('.combo-opt');
+      if (first && !comboList.hidden) { e.preventDefault(); first.focus(); }
+    }
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.combo-wrap') && !comboList.hidden) comboClose(false);
+  });
+
+  /* ---------- player ---------- */
+  const player = document.getElementById('player');
+  const controls = document.getElementById('pcontrols');
+  const playBtn = document.getElementById('play-btn');
+  const bigPlay = document.getElementById('big-play');
+  const played = document.getElementById('played');
+  const knob = document.getElementById('knob');
+  const timeEl = document.getElementById('time');
+  const progress = document.getElementById('progress');
+  const ccBtn = document.getElementById('cc-btn');
+  const subtitle = document.getElementById('subtitle');
+  const playerStatus = document.getElementById('player-status');
+  const valueNow = document.getElementById('value-now');
+  let playing = false;
+  let position = 48;
+  let captions = true;
+  const TOTAL = 24 * 60 + 10;
+  let hideTimer = null;
+  let pointerInControls = false;
+  let focusInControls = false;
+  let scrubbing = false;
+
+  function fmt(sec) {
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return m + ':' + String(s).padStart(2, '0');
+  }
+  function renderPosition() {
+    played.style.width = position + '%';
+    knob.style.left = position + '%';
+    const sec = Math.round(TOTAL * position / 100);
+    const txt = fmt(sec) + ' / ' + fmt(TOTAL);
+    timeEl.textContent = txt;
+    progress.setAttribute('aria-valuenow', String(Math.round(position)));
+    progress.setAttribute('aria-valuetext', fmt(sec) + ' of ' + fmt(TOTAL));
+    valueNow.textContent = fmt(sec) + ' of ' + fmt(TOTAL);
+  }
+  function showControls() {
+    controls.classList.add('visible');
+    clearTimeout(hideTimer);
+    if (playing) {
+      hideTimer = setTimeout(() => {
+        const focusInside = controls.contains(document.activeElement);
+        if (!playing || pointerInControls || focusInControls || focusInside || scrubbing) return;
+        controls.classList.remove('visible');
+      }, 2500);
+    }
+  }
+  function setPlaying(next) {
+    playing = next;
+    player.classList.toggle('playing', playing);
+    playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+    playBtn.innerHTML = playing
+      ? '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+    playerStatus.textContent = (playing ? 'Playing' : 'Paused') + ' at ' + progress.getAttribute('aria-valuetext') + '. Captions ' + (captions ? 'on' : 'off') + '.';
+    showControls();
+  }
+  playBtn.addEventListener('click', () => setPlaying(!playing));
+  bigPlay.addEventListener('click', () => setPlaying(true));
+  player.addEventListener('pointermove', showControls);
+  player.addEventListener('pointerdown', showControls);
+  controls.addEventListener('mouseenter', () => { pointerInControls = true; showControls(); });
+  controls.addEventListener('mouseleave', () => { pointerInControls = false; showControls(); });
+  controls.addEventListener('focusin', () => { focusInControls = true; showControls(); });
+  controls.addEventListener('focusout', e => {
+    if (!controls.contains(e.relatedTarget)) { focusInControls = false; showControls(); }
+  });
+  progress.addEventListener('keydown', e => {
+    const step = e.shiftKey ? 10 : 5;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); position = Math.min(100, position + (step / TOTAL) * 100); renderPosition(); showControls(); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); position = Math.max(0, position - (step / TOTAL) * 100); renderPosition(); showControls(); }
+    if (e.key === 'Home') { e.preventDefault(); position = 0; renderPosition(); showControls(); }
+    if (e.key === 'End') { e.preventDefault(); position = 100; renderPosition(); showControls(); }
+    if (e.key === 'PageUp') { e.preventDefault(); position = Math.min(100, position + (60 / TOTAL) * 100); renderPosition(); showControls(); }
+    if (e.key === 'PageDown') { e.preventDefault(); position = Math.max(0, position - (60 / TOTAL) * 100); renderPosition(); showControls(); }
+  });
+  progress.addEventListener('pointerdown', e => {
+    scrubbing = true;
+    const rect = progress.getBoundingClientRect();
+    position = Math.min(100, Math.max(0, (e.clientX - rect.left) / rect.width * 100));
+    renderPosition();
+    showControls();
+    try { progress.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  progress.addEventListener('pointermove', e => {
+    if (!scrubbing) return;
+    const rect = progress.getBoundingClientRect();
+    position = Math.min(100, Math.max(0, (e.clientX - rect.left) / rect.width * 100));
+    renderPosition();
+  });
+  progress.addEventListener('pointerup', () => { scrubbing = false; showControls(); });
+  progress.addEventListener('pointercancel', () => { scrubbing = false; showControls(); });
+  ccBtn.addEventListener('click', () => {
+    captions = !captions;
+    ccBtn.setAttribute('aria-pressed', String(captions));
+    subtitle.hidden = !captions;
+    playerStatus.textContent = (playing ? 'Playing' : 'Paused') + ' at ' + progress.getAttribute('aria-valuetext') + '. Captions ' + (captions ? 'on' : 'off') + '.';
+  });
+  document.addEventListener('keydown', e => {
+    if (!player.contains(document.activeElement)) return;
+    const t = e.target;
+    if (t && (t.matches('input, textarea, select') || t.isContentEditable)) return;
+    if (t && t !== progress && t.matches('button, a')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (e.key === ' ' || k === 'k') { e.preventDefault(); setPlaying(!playing); }
+    if (k === 'j') { e.preventDefault(); position = Math.max(0, position - (10 / TOTAL) * 100); renderPosition(); showControls(); }
+    if (k === 'l') { e.preventDefault(); position = Math.min(100, position + (10 / TOTAL) * 100); renderPosition(); showControls(); }
+    if (k === 'c') { e.preventDefault(); ccBtn.click(); }
+    if (k === 'm') { e.preventDefault(); playerStatus.textContent = 'Muted.'; }
+  });
+  setInterval(() => {
+    if (!playing) return;
+    position = Math.min(100, position + 0.14);
+    renderPosition();
+    if (position >= 100) setPlaying(false);
+  }, 200);
+  renderPosition();
+  showControls();
+
+  /* ---------- dialog ---------- */
+  const scrim = document.getElementById('scrim');
+  const sheet = document.getElementById('sheet');
+  let lastFocus = null;
+  function openSheet(trigger) {
+    lastFocus = trigger || document.activeElement;
+    scrim.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('close-sheet').focus();
+  }
+  function closeSheet() {
+    if (!scrim.classList.contains('open')) return;
+    scrim.classList.remove('open');
+    document.body.style.overflow = '';
+    if (lastFocus) lastFocus.focus();
+  }
+  document.getElementById('open-sheet').addEventListener('click', e => openSheet(e.currentTarget));
+  document.getElementById('open-sheet-2').addEventListener('click', e => openSheet(e.currentTarget));
+  document.getElementById('close-sheet').addEventListener('click', closeSheet);
+  document.getElementById('cancel-sheet').addEventListener('click', closeSheet);
+  document.getElementById('confirm-sheet').addEventListener('click', () => {
+    closeSheet();
+    announce('Removed from My List');
+  });
+  scrim.addEventListener('click', e => { if (e.target === scrim) closeSheet(); });
+  document.addEventListener('keydown', e => {
+    if (!scrim.classList.contains('open')) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeSheet(); return; }
+    if (e.key !== 'Tab') return;
+    const focusables = [...sheet.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])')]
+      .filter(el => !el.disabled && el.offsetParent !== null);
+    if (!focusables.length) return;
+    const first = focusables[0];
+    const lastEl = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); lastEl.focus(); }
+    else if (!e.shiftKey && document.activeElement === lastEl) { e.preventDefault(); first.focus(); }
+  });
+
+  /* ---------- form ---------- */
+  const form = document.getElementById('demo-form');
+  const email = document.getElementById('email');
+  const emailError = document.getElementById('email-error');
+  const formStatus = document.getElementById('form-status');
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const value = email.value.trim();
+    let message = '';
+    if (!value) message = 'Enter the email address that should receive the sign-in link.';
+    else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) message = 'Enter a complete email address, like you@example.com.';
+    if (message) {
+      email.setAttribute('aria-invalid', 'true');
+      emailError.textContent = message;
+      emailError.hidden = false;
+      formStatus.textContent = '';
+      email.focus();
+    } else {
+      email.removeAttribute('aria-invalid');
+      emailError.hidden = true;
+      formStatus.textContent = 'Sign-in link sent to ' + value + '. The link works once and does not expire while you are using it.';
+    }
+  });
+  email.addEventListener('input', () => {
+    if (!emailError.hidden) {
+      email.removeAttribute('aria-invalid');
+      emailError.hidden = true;
+    }
+  });
+
+  /* ---------- live announcements ---------- */
+  const live = document.getElementById('live');
+  const log = document.getElementById('log');
+  let logLines = [];
+  function announce(msg) {
+    live.textContent = msg;
+    logLines.unshift(msg);
+    logLines = logLines.slice(0, 4);
+    log.innerHTML = '<b>Last announcements</b><br>' + logLines.map(x => '· ' + x).join('<br>');
+  }
+  document.querySelectorAll('[data-announce]').forEach(b => {
+    b.addEventListener('click', () => announce(b.dataset.announce));
+  });
+
+  /* ---------- native demo ---------- */
+  const heart = document.getElementById('heart');
+  let saved = false;
+  heart.addEventListener('click', () => {
+    saved = !saved;
+    heart.setAttribute('aria-pressed', String(saved));
+    heart.setAttribute('aria-label', (saved ? 'Remove Frieren: Beyond Journey\'s End from My List' : 'Save Frieren: Beyond Journey\'s End'));
+    document.getElementById('heart-glyph').textContent = saved ? '♥' : '♡';
+    document.getElementById('heart-label').textContent = saved ? 'Saved' : 'Save';
+  });
+  const tabs = [...document.querySelectorAll('[role="tab"]')];
+  tabs.forEach((tab, i) => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.setAttribute('aria-selected', String(t === tab)));
+    });
+    tab.addEventListener('keydown', e => {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      e.preventDefault();
+      const next = (i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length;
+      tabs.forEach(t => t.setAttribute('aria-selected', String(tabs[next] === t)));
+      tabs[next].focus();
+    });
+  });
+
+  /* ---------- init ---------- */
+  applyMode(readMode(), false);
+  if (reduced) root.classList.add('reduce-motion');
+</script>
+</body>
+</html>
